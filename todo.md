@@ -46,4 +46,4 @@
 ## Deployment
 - [x] webdev_check_status clean (no LSP/TS errors)
 - [x] Save checkpoint
-- [ ] Deploy public
+- [x] Deploy public
