@@ -1,6 +1,15 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import {
+  emailSubscribers,
+  InsertEmailSubscriber,
+  InsertPayment,
+  InsertRewrite,
+  InsertUser,
+  payments,
+  rewrites,
+  users,
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +98,102 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return r[0];
+}
+
+export async function updateUser(id: number, patch: Partial<InsertUser>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set(patch).where(eq(users.id, id));
+}
+
+export async function listAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).orderBy(desc(users.createdAt));
+}
+
+export async function findUserByStripeCustomerId(stripeCustomerId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select().from(users).where(eq(users.stripeCustomerId, stripeCustomerId)).limit(1);
+  return r[0];
+}
+
+// REWRITES
+export async function createRewrite(input: InsertRewrite): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const r: any = await db.insert(rewrites).values(input);
+  return Number(r?.[0]?.insertId ?? r?.insertId ?? 0);
+}
+
+export async function updateRewrite(id: number, patch: Partial<InsertRewrite>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(rewrites).set(patch).where(eq(rewrites.id, id));
+}
+
+export async function getRewriteById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select().from(rewrites).where(eq(rewrites.id, id)).limit(1);
+  return r[0];
+}
+
+export async function listRewritesByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(rewrites).where(eq(rewrites.userId, userId)).orderBy(desc(rewrites.createdAt));
+}
+
+export async function listAllRewrites(limit = 200) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(rewrites).orderBy(desc(rewrites.createdAt)).limit(limit);
+}
+
+export async function countPaidRewritesSince(userId: number, since: Date): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const r = await db
+    .select({ c: sql<number>`count(*)` })
+    .from(rewrites)
+    .where(and(eq(rewrites.userId, userId), gte(rewrites.createdAt, since), eq(rewrites.paid, true)));
+  return Number(r[0]?.c ?? 0);
+}
+
+// PAYMENTS
+export async function recordPayment(input: InsertPayment) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(payments).values(input);
+}
+
+export async function listAllPayments() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(payments).orderBy(desc(payments.createdAt));
+}
+
+// EMAIL SUBSCRIBERS
+export async function addEmailSubscriber(input: InsertEmailSubscriber) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.insert(emailSubscribers).values(input);
+  } catch (e: any) {
+    if (!String(e?.message ?? "").includes("Duplicate")) throw e;
+  }
+}
+
+export async function listEmailSubscribers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(emailSubscribers).orderBy(desc(emailSubscribers.createdAt));
+}
+
