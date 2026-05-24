@@ -1,10 +1,29 @@
+import "dotenv/config";
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+function optionalEnv(name: string): string | undefined {
+  return process.env[name] || undefined;
+}
+
 export const ENV = {
-  appId: process.env.VITE_APP_ID ?? "",
-  cookieSecret: process.env.JWT_SECRET ?? "",
-  databaseUrl: process.env.DATABASE_URL ?? "",
-  oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
-  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+  nodeEnv: process.env.NODE_ENV || "development",
   isProduction: process.env.NODE_ENV === "production",
-  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  supabaseUrl: requireEnv("SUPABASE_URL"),
+  supabaseAnonKey: requireEnv("SUPABASE_ANON_KEY"),
+  supabaseServiceRoleKey: optionalEnv("SUPABASE_SERVICE_ROLE_KEY"),
+  supabaseStorageBucket: process.env.SUPABASE_STORAGE_BUCKET || "resume-uploads",
+  openaiApiKey: requireEnv("OPENAI_API_KEY"),
+  openaiBaseUrl: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
+  openaiModel: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+  ownerEmail: optionalEnv("OWNER_EMAIL"),
+  mailchimpApiKey: optionalEnv("MAILCHIMP_API_KEY"),
+  mailchimpAudienceId: optionalEnv("MAILCHIMP_AUDIENCE_ID"),
+  mailchimpServerPrefix: optionalEnv("MAILCHIMP_SERVER_PREFIX"),
 };

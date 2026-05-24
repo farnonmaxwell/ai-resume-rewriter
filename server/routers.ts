@@ -1,28 +1,43 @@
-import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
+import { z } from "zod";
+import { BLS_INDUSTRIES, JOB_TYPES } from "@shared/jass";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import * as db from "./db";
 import { rewritesRouter } from "./routers/rewrites";
-import { paymentsRouter } from "./routers/payments";
 import { adminRouter } from "./routers/admin";
 import { marketingRouter } from "./routers/marketing";
 
+const jobTypeValues = JOB_TYPES.map((type) => type.value) as [string, ...string[]];
+const industryValues = BLS_INDUSTRIES as readonly [string, ...string[]];
+
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
-    }),
+    me: publicProcedure.query((opts) => opts.ctx.user),
+    logout: publicProcedure.mutation(() => ({ success: true } as const)),
   }),
-
+  profile: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return await db.ensureProfile(ctx.user.id);
+    }),
+    upsert: protectedProcedure
+      .input(
+        z.object({
+          jobType: z.enum(jobTypeValues),
+          targetRole: z.string().max(160).optional().nullable(),
+          industry: z.enum(industryValues),
+          industryOther: z.string().max(160).optional().nullable(),
+          feedbackOptIn: z.boolean().optional(),
+        }).refine((value) => value.industry !== "Other" || Boolean(value.industryOther?.trim()), {
+          message: "Please describe your industry when choosing Other.",
+          path: ["industryOther"],
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        return await db.upsertProfile(ctx.user.id, input);
+      }),
+  }),
   rewrites: rewritesRouter,
-  payments: paymentsRouter,
   admin: adminRouter,
   marketing: marketingRouter,
 });

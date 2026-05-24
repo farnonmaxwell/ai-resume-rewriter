@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { FileUp, Loader2, ShieldCheck } from "lucide-react";
 import { useRef, useState } from "react";
@@ -36,7 +35,7 @@ export default function UploadPage() {
   if (loading) {
     return (
       <PageShell>
-        <div className="py-24 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-eo50-gold" /></div>
+        <div className="py-24 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-jass-gold" /></div>
       </PageShell>
     );
   }
@@ -45,9 +44,9 @@ export default function UploadPage() {
     return (
       <PageShell>
         <div className="max-w-xl mx-auto px-4 py-20 text-center">
-          <h1 className="font-display text-3xl font-bold text-eo50-navy">Sign in to start your rewrite</h1>
-          <p className="text-eo50-muted mt-3">Your account holds your rewrite history and lets you re-download files anytime.</p>
-          <Button className="mt-6 bg-eo50-gold text-eo50-navy hover:bg-[var(--eo50-gold-dark)] h-11 px-6" onClick={() => (window.location.href = getLoginUrl())}>
+          <h1 className="font-display text-3xl font-bold text-jass-navy">Sign in to start your rewrite</h1>
+          <p className="text-jass-muted mt-3">Your account holds your rewrite history and lets you re-download files anytime.</p>
+          <Button className="mt-6 bg-jass-gold text-jass-navy hover:bg-[var(--jass-gold-dark)] h-11 px-6" onClick={() => setLocation("/auth")}>
             Sign in to continue
           </Button>
         </div>
@@ -87,7 +86,7 @@ export default function UploadPage() {
 
   return (
     <PageShell>
-      <section className="bg-eo50-navy text-white">
+      <section className="bg-jass-navy text-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <h1 className="font-display text-3xl md:text-4xl font-bold">Step 1: Share your current resume</h1>
           <p className="mt-3 text-white/80">Upload a PDF or DOCX, or paste your resume text. We will extract everything automatically.</p>
@@ -96,12 +95,12 @@ export default function UploadPage() {
 
       <section className="py-10 md:py-14">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="border-eo50-mid-gray">
+          <Card className="border-jass-mid-gray">
             <CardContent className="p-6">
               <Tabs defaultValue="file">
-                <TabsList className="grid w-full grid-cols-2 bg-eo50-light-gray">
-                  <TabsTrigger value="file" className="data-[state=active]:bg-eo50-navy data-[state=active]:text-white">Upload file</TabsTrigger>
-                  <TabsTrigger value="paste" className="data-[state=active]:bg-eo50-navy data-[state=active]:text-white">Paste text</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 bg-jass-light-gray">
+                  <TabsTrigger value="file" className="data-[state=active]:bg-jass-navy data-[state=active]:text-white">Upload file</TabsTrigger>
+                  <TabsTrigger value="paste" className="data-[state=active]:bg-jass-navy data-[state=active]:text-white">Paste text</TabsTrigger>
                 </TabsList>
                 <TabsContent value="file" className="pt-6">
                   <div
@@ -110,11 +109,11 @@ export default function UploadPage() {
                     aria-label="Choose a file to upload"
                     onClick={() => inputRef.current?.click()}
                     onKeyDown={e => { if (e.key === "Enter" || e.key === " ") inputRef.current?.click(); }}
-                    className="border-2 border-dashed border-eo50-mid-gray rounded-lg p-10 text-center hover:bg-eo50-light-gray transition-colors"
+                    className="border-2 border-dashed border-jass-mid-gray rounded-lg p-10 text-center hover:bg-jass-light-gray transition-colors"
                   >
-                    <FileUp className="w-10 h-10 text-eo50-gold mx-auto" />
-                    <div className="mt-3 font-semibold text-eo50-navy">{file ? file.name : "Click to choose a PDF or DOCX"}</div>
-                    <div className="text-xs text-eo50-muted mt-1">Max 8 MB. We do not share your file.</div>
+                    <FileUp className="w-10 h-10 text-jass-gold mx-auto" />
+                    <div className="mt-3 font-semibold text-jass-navy">{file ? file.name : "Click to choose a PDF or DOCX"}</div>
+                    <div className="text-xs text-jass-muted mt-1">Max 8 MB. We do not share your file.</div>
                     <input
                       ref={inputRef}
                       type="file"
@@ -126,13 +125,13 @@ export default function UploadPage() {
                   <Button
                     onClick={() => submit("file")}
                     disabled={busy || !file}
-                    className="mt-6 w-full h-11 bg-eo50-gold text-eo50-navy hover:bg-[var(--eo50-gold-dark)]"
+                    className="mt-6 w-full h-11 bg-jass-gold text-jass-navy hover:bg-[var(--jass-gold-dark)]"
                   >
                     {busy ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Parsing...</> : "Continue"}
                   </Button>
                 </TabsContent>
                 <TabsContent value="paste" className="pt-6">
-                  <label htmlFor="pasted" className="text-sm font-semibold text-eo50-navy">Paste your full resume text</label>
+                  <label htmlFor="pasted" className="text-sm font-semibold text-jass-navy">Paste your full resume text</label>
                   <Textarea
                     id="pasted"
                     rows={14}
@@ -144,14 +143,14 @@ export default function UploadPage() {
                   <Button
                     onClick={() => submit("paste")}
                     disabled={busy || pasted.length < 100}
-                    className="mt-4 w-full h-11 bg-eo50-gold text-eo50-navy hover:bg-[var(--eo50-gold-dark)]"
+                    className="mt-4 w-full h-11 bg-jass-gold text-jass-navy hover:bg-[var(--jass-gold-dark)]"
                   >
                     {busy ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Parsing...</> : "Continue"}
                   </Button>
                 </TabsContent>
               </Tabs>
-              <div className="mt-6 flex items-start gap-2 text-xs text-eo50-muted">
-                <ShieldCheck className="w-4 h-4 text-eo50-gold mt-0.5" />
+              <div className="mt-6 flex items-start gap-2 text-xs text-jass-muted">
+                <ShieldCheck className="w-4 h-4 text-jass-gold mt-0.5" />
                 <p>Your resume is used only to generate your rewrite and is stored privately under your account.</p>
               </div>
             </CardContent>

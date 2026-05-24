@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { storagePut } from "../storage";
+import { BLS_INDUSTRIES, JOB_TYPES } from "@shared/jass";
+import { storageGet, storagePut } from "../storage";
 import { protectedProcedure, router } from "../_core/trpc";
 import * as db from "../db";
 import { generateDocx, generatePdf } from "../documentExport";
@@ -15,27 +16,26 @@ import {
   scoreStructure,
 } from "../rewriteEngine";
 
+const uuidSchema = z.string().uuid();
+const jobTypeValues = JOB_TYPES.map((type) => type.value) as [string, ...string[]];
+const industryValues = BLS_INDUSTRIES as readonly [string, ...string[]];
+
 const intakeSchema = z.object({
   roleType: z.string().max(255).optional(),
-  industry: z.string().max(255).optional(),
+  jobType: z.enum(jobTypeValues).optional(),
+  industry: z.enum(industryValues).optional(),
+  industryOther: z.string().max(160).optional().nullable(),
   jobDescription: z.string().max(20000).optional(),
   concerns: z.array(z.string()).optional(),
   yearsToHighlight: z.string().max(16).optional(),
 });
 
-function isSubscribedActive(user: { subscriptionStatus?: string | null }): boolean {
-  const s = (user.subscriptionStatus || "").toLowerCase();
-  return s === "active" || s === "trialing";
-}
-
 export const rewritesRouter = router({
-  /** Step 1: upload + parse the resume. Persists a draft rewrite. */
   upload: protectedProcedure
     .input(
       z.object({
         fileName: z.string().min(1).max(255).optional(),
         mimeType: z.string().max(128).optional(),
-        // Either a base64 file or pasted text
         fileBase64: z.string().optional(),
         pastedText: z.string().max(80000).optional(),
       }),
@@ -43,7 +43,7 @@ export const rewritesRouter = router({
     .mutation(async ({ ctx, input }) => {
       let parsed;
       let storageKey: string | undefined;
-      let fileName = input.fileName || "pasted-resume.txt";
+      const fileName = input.fileName || "pasted-resume.txt";
 
       if (input.fileBase64) {
         const buf = Buffer.from(input.fileBase64, "base64");
@@ -52,10 +52,13 @@ export const rewritesRouter = router({
         }
         parsed = await parseResume(buf, fileName, input.mimeType);
         try {
-          const put = await storagePut(`resumes/${ctx.user.id}/${fileName}`, buf, input.mimeType || "application/octet-stream");
+          const put = await storagePut("resumes", fileName, buf, {
+            userId: ctx.user.id,
+            contentType: input.mimeType || "application/octet-stream",
+          });
           storageKey = put.key;
         } catch (e) {
-          console.warn("[upload] storagePut failed", e);
+          console.warn("[upload] Supabase storage upload failed", e);
         }
       } else if (input.pastedText) {
         parsed = parseResumeFromText(input.pastedText);
@@ -67,25 +70,29 @@ export const rewritesRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Could not extract enough text from your resume. Try pasting it as plain text instead." });
       }
 
+      const profile = await db.ensureProfile(ctx.user.id);
       const id = await db.createRewrite({
         userId: ctx.user.id,
         originalFileName: fileName,
         originalFileKey: storageKey,
         originalText: parsed.text,
-        status: "draft",
+        jobType: profile.jobType,
+        industry: profile.industry,
+        industryOther: profile.industryOther,
       });
-      return { id, parsedContact: parsed.contact, charCount: parsed.text.length };
+      return { id, parsedContact: parsed.contact, charCount: parsed.text.length, profile };
     }),
 
-  /** Step 2: save intake answers. */
   saveIntake: protectedProcedure
-    .input(z.object({ id: z.number().int().positive() }).merge(intakeSchema))
+    .input(z.object({ id: uuidSchema }).merge(intakeSchema))
     .mutation(async ({ ctx, input }) => {
       const r = await db.getRewriteById(input.id);
       if (!r || r.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
       await db.updateRewrite(input.id, {
         roleType: input.roleType,
+        jobType: input.jobType,
         industry: input.industry,
+        industryOther: input.industryOther,
         jobDescription: input.jobDescription,
         concerns: input.concerns ?? [],
         yearsToHighlight: input.yearsToHighlight,
@@ -93,9 +100,8 @@ export const rewritesRouter = router({
       return { ok: true };
     }),
 
-  /** Step 3a: free score + teaser bullets (no payment required). */
   generateTeaser: protectedProcedure
-    .input(z.object({ id: z.number().int().positive() }))
+    .input(z.object({ id: uuidSchema }))
     .mutation(async ({ ctx, input }) => {
       const r = await db.getRewriteById(input.id);
       if (!r || r.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
@@ -103,7 +109,8 @@ export const rewritesRouter = router({
       const teaser = await runTeaser({
         originalText: r.originalText,
         roleType: r.roleType ?? undefined,
-        industry: r.industry ?? undefined,
+        industry: r.industryOther || r.industry || undefined,
+        jobType: r.jobType ?? undefined,
         jobDescription: r.jobDescription ?? undefined,
         concerns: (r.concerns as string[]) ?? [],
         yearsToHighlight: r.yearsToHighlight ?? undefined,
@@ -126,52 +133,42 @@ export const rewritesRouter = router({
       };
     }),
 
-  /** Step 3b: full rewrite. Requires either paid=true on this row, or active subscription. */
   generateFull: protectedProcedure
-    .input(z.object({ id: z.number().int().positive() }))
+    .input(z.object({ id: uuidSchema }))
     .mutation(async ({ ctx, input }) => {
       const r = await db.getRewriteById(input.id);
       if (!r || r.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
 
-      const fresh = await db.getUserById(ctx.user.id);
-      const subscribed = fresh ? isSubscribedActive(fresh) : false;
-
-      if (!r.paid && !subscribed) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Payment required: purchase a single rewrite or subscribe for unlimited rewrites.",
-        });
-      }
-
-      // If the user is subscribed, mark this rewrite as paid for history clarity
-      if (subscribed && !r.paid) {
-        await db.updateRewrite(input.id, { paid: true });
-      }
-
       const result = await runRewrite({
         originalText: r.originalText,
         roleType: r.roleType ?? undefined,
-        industry: r.industry ?? undefined,
+        industry: r.industryOther || r.industry || undefined,
+        jobType: r.jobType ?? undefined,
         jobDescription: r.jobDescription ?? undefined,
         concerns: (r.concerns as string[]) ?? [],
         yearsToHighlight: r.yearsToHighlight ?? undefined,
       });
 
-      // Generate downloadable PDF and DOCX and stash them in storage
       let pdfKey: string | undefined;
       let docxKey: string | undefined;
+      let pdfUrl: string | null = null;
+      let docxUrl: string | null = null;
       try {
         const pdfBuf = await generatePdf(result.rewrittenJson);
         const docxBuf = await generateDocx(result.rewrittenJson);
         const baseName = (result.rewrittenJson.name || "resume").replace(/[^A-Za-z0-9_-]+/g, "_");
-        const p1 = await storagePut(`rewrites/${ctx.user.id}/${input.id}/${baseName}.pdf`, pdfBuf, "application/pdf");
-        const p2 = await storagePut(
-          `rewrites/${ctx.user.id}/${input.id}/${baseName}.docx`,
-          docxBuf,
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        );
+        const p1 = await storagePut(`rewrites/${input.id}`, `${baseName}.pdf`, pdfBuf, {
+          userId: ctx.user.id,
+          contentType: "application/pdf",
+        });
+        const p2 = await storagePut(`rewrites/${input.id}`, `${baseName}.docx`, docxBuf, {
+          userId: ctx.user.id,
+          contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        });
         pdfKey = p1.key;
         docxKey = p2.key;
+        pdfUrl = p1.url;
+        docxUrl = p2.url;
       } catch (e) {
         console.warn("[generateFull] export failed", e);
       }
@@ -199,41 +196,48 @@ export const rewritesRouter = router({
         ageBiasFlags: result.ageBiasFlags,
         tips: result.tips,
         scores: result.scores,
-        pdfUrl: pdfKey ? `/manus-storage/${pdfKey}` : null,
-        docxUrl: docxKey ? `/manus-storage/${docxKey}` : null,
+        pdfUrl,
+        docxUrl,
       };
     }),
 
-  /** Fetch a single rewrite (used by results page and dashboard). */
-  get: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z.object({ id: uuidSchema })).query(async ({ ctx, input }) => {
     const r = await db.getRewriteById(input.id);
     if (!r || (r.userId !== ctx.user.id && ctx.user.role !== "admin")) {
       throw new TRPCError({ code: "NOT_FOUND" });
     }
+    const [pdf, docx] = await Promise.all([
+      r.pdfFileKey ? storageGet(r.pdfFileKey).catch(() => null) : Promise.resolve(null),
+      r.docxFileKey ? storageGet(r.docxFileKey).catch(() => null) : Promise.resolve(null),
+    ]);
     return {
       ...r,
-      pdfUrl: r.pdfFileKey ? `/manus-storage/${r.pdfFileKey}` : null,
-      docxUrl: r.docxFileKey ? `/manus-storage/${r.docxFileKey}` : null,
+      pdfUrl: pdf?.url ?? null,
+      docxUrl: docx?.url ?? null,
     };
   }),
 
-  /** History list for the current user. */
   myHistory: protectedProcedure.query(async ({ ctx }) => {
     const rows = await db.listRewritesByUser(ctx.user.id);
-    return rows.map(r => ({
-      id: r.id,
-      roleType: r.roleType,
-      industry: r.industry,
-      atsScore: r.atsScore,
-      paid: r.paid,
-      status: r.status,
-      createdAt: r.createdAt,
-      pdfUrl: r.pdfFileKey ? `/manus-storage/${r.pdfFileKey}` : null,
-      docxUrl: r.docxFileKey ? `/manus-storage/${r.docxFileKey}` : null,
+    return Promise.all(rows.map(async (r) => {
+      const [pdf, docx] = await Promise.all([
+        r.pdfFileKey ? storageGet(r.pdfFileKey).catch(() => null) : Promise.resolve(null),
+        r.docxFileKey ? storageGet(r.docxFileKey).catch(() => null) : Promise.resolve(null),
+      ]);
+      return {
+        id: r.id,
+        roleType: r.roleType,
+        jobType: r.jobType,
+        industry: r.industryOther || r.industry,
+        atsScore: r.atsScore,
+        status: r.status,
+        createdAt: r.createdAt,
+        pdfUrl: pdf?.url ?? null,
+        docxUrl: docx?.url ?? null,
+      };
     }));
   }),
 
-  /** Local heuristic scoring helper, exposed for unit tests. */
   scoreOriginal: protectedProcedure
     .input(z.object({ text: z.string(), jobDescription: z.string().optional() }))
     .query(({ input }) => {

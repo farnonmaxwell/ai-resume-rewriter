@@ -8,7 +8,7 @@ describe("syncSubscriber", () => {
   });
 
   it("returns stub mode when credentials are missing", async () => {
-    const r = await syncSubscriber("hello@eo50.test", "landing-footer");
+    const r = await syncSubscriber("hello@jass.test", "landing-footer");
     expect(r.ok).toBe(true);
     expect(r.stub).toBe(true);
     expect(r.message).toMatch(/Stubbed/);

@@ -1,65 +1,58 @@
-# EO50 Resume Rewriter and ATS Optimizer
+# JASS | Job Application Support System
 
-An [Empower Over 50 (EO50)](https://empowerover50.com) product. A full-stack web application that helps professionals 50 and over eliminate age-bias from their resumes, pass Applicant Tracking Systems, and receive a professionally rewritten, achievement-focused resume.
-
----
-
-## What It Does
-
-- Accepts resume uploads in PDF, DOCX, or plain text paste format with automatic parsing
-- Guides users through a 5-step intake flow: role type, industry, target job description, concerns checklist, and years of experience to highlight
-- Rewrites the resume using AI: removes age-bias signals, optimizes ATS keywords, modernizes formatting, and transforms duty-based bullets into achievement-based bullets
-- Generates an ATS Compatibility Score (0-100) with a full breakdown across keyword match, formatting, structure, and age-bias sub-scores
-- Shows a side-by-side comparison of the original vs. rewritten resume with color-coded change annotations
-- Provides personalized tips based on the detected issues
-- Allows download of the rewritten resume as PDF and DOCX
-- Stripe payments: free tier (score + teaser), $27 one-time full rewrite, $9/month unlimited subscription
-- User accounts with rewrite history dashboard
-- Admin dashboard with user management, rewrite stats, revenue overview, and CSV export
-- Mailchimp email capture (stub mode; activates when credentials are set)
+JASS is an AI-powered job application support tool for people who need a sharper, more credible application package. It rewrites resumes, scores ATS readiness, and adapts the experience to the type of work the user is pursuing. The product voice is direct, caring, and senior: **"Your resume undersells you. Here's what I'd fix."**
 
 ---
 
-## Tech Stack
+## Current Build Scope
 
-| Layer | Technology |
+This build replaces the previous application architecture with a Supabase and OpenAI foundation. It keeps the core resume upload, parsing, scoring, rewrite, results, dashboard, admin, export, and email-capture workflows, while removing payment and legacy platform dependencies.
+
+| Area | Current implementation |
 |---|---|
+| Auth | Supabase Auth with email/password |
+| Database | Supabase Postgres migration in `supabase/migrations/0001_jass_core.sql` |
+| Storage | Supabase Storage private `resume-uploads` bucket with signed URLs |
+| AI | Direct OpenAI-compatible chat completions using `OPENAI_API_KEY` |
 | Frontend | React 19, Tailwind CSS 4, shadcn/ui, Wouter |
-| Backend | Express 4, tRPC 11, Drizzle ORM |
-| Database | MySQL (TiDB compatible) |
-| AI | Built-in LLM helper (Gemini 2.5 Flash via Manus Forge) |
-| File parsing | pdf-parse, mammoth |
-| Document export | docx, pdf-lib |
-| Payments | Stripe Checkout + Customer Portal |
-| Storage | S3-compatible (Manus built-in) |
-| Auth | Manus OAuth |
+| Backend | Express 4 and tRPC 11 |
 | Testing | Vitest |
+
+The build deliberately does **not** include job search API integration, payment flows, interview prep, ghost-job verification, dual scoring UI, PWA support, landing-page expansion, Recruiter Lens, Skills Gap Bridge, or I Got Hired.
+
+---
+
+## Core JASS Features
+
+The first screen after authentication asks: **"What type of work are you looking for?"** The six supported branches are Professional/Office, Skilled Trade, Healthcare, Labour/Warehouse/Logistics, Retail/Hospitality/Food Service, and Other. This value is stored on the user profile and drives resume format, scoring posture, job-source assumptions, interview-prep tone, and pricing copy displayed in the UI.
+
+The profile setup also includes a Bureau of Labor Statistics-style industry taxonomy with an **Other** option and free-text field. Required categories include Healthcare and Pharmaceuticals, Technology and IT, Finance and Banking, Education, Government and Public Sector, Manufacturing, Construction and Trades, Retail and Consumer, Legal, Media and Communications, Non-profit, Energy and Utilities, Transportation and Logistics, Hospitality and Food Service, Real Estate, Consulting and Professional Services, Agriculture, and additional categories.
+
+The feedback loop data model exists from day one. The `feedback_outcomes` table stores user_id, job_id, company_name, application_date, status, last_updated, and notes. Supported statuses are applied, response_received, interview_scheduled, offer, ghosted, and rejected. UI for this loop can be added later without another database redesign.
 
 ---
 
 ## Project Structure
 
-```
+```text
 client/
   src/
-    pages/          Landing, Upload, Intake, Score, Results, Dashboard, Admin, Pricing, HowItWorks
-    components/     SiteHeader, SiteFooter, PageShell
-    lib/trpc.ts     tRPC client binding
-    App.tsx         Routes
-    index.css       EO50 brand tokens (Navy #1a1a2e, Gold #d4a843)
-drizzle/
-  schema.ts         All database tables
+    pages/          Auth, Onboarding, Upload, Intake, Score, Results, Dashboard, Admin, Pricing, HowItWorks
+    components/     SiteHeader, SiteFooter, PageShell, DashboardLayout
+    lib/            Supabase browser client and tRPC bindings
+    App.tsx         Routes and onboarding gate
 server/
-  routers/          rewrites.ts, payments.ts, admin.ts, marketing.ts
-  rewriteEngine.ts  AI rewrite + ATS scoring logic
+  routers/          rewrites, admin, marketing
+  _core/            Express entrypoint, tRPC, Supabase-auth context, OpenAI wrapper
+  db.ts             Supabase/Postgres data helpers
+  storage.ts        Supabase Storage upload and signed URL helpers
+  rewriteEngine.ts  JASS resume rewrite and scoring logic
   resumeParser.ts   PDF/DOCX/text parsing
   documentExport.ts PDF and DOCX generation
-  stripeClient.ts   Stripe wrapper
-  stripeWebhook.ts  Webhook handler
-  mailchimp.ts      Mailchimp stub
-  db.ts             Drizzle query helpers
 shared/
-  products.ts       Stripe product/price IDs
+  jass.ts           Job-type, industry, and pricing-display constants
+supabase/
+  migrations/       Core JASS schema, RLS, triggers, and storage bucket policies
 ```
 
 ---
@@ -68,91 +61,59 @@ shared/
 
 ### Prerequisites
 
-- Node.js 22+
-- pnpm
-- A MySQL-compatible database (TiDB Cloud free tier works)
-
-### Setup
+You need Node.js 22+, pnpm, a Supabase project, and an OpenAI API key. Apply `supabase/migrations/0001_jass_core.sql` in the Supabase SQL editor or through the Supabase CLI before running the app against a live project.
 
 ```bash
-# 1. Clone the repo
 git clone https://github.com/farnonmaxwell/ai-resume-rewriter.git
 cd ai-resume-rewriter
-
-# 2. Install dependencies
 pnpm install
-
-# 3. Copy environment template and fill in values
 cp .env.example .env
-
-# 4. Generate and apply database migrations
-pnpm drizzle-kit generate
-pnpm drizzle-kit migrate
-
-# 5. Start the dev server
 pnpm dev
 ```
 
-The app runs at `http://localhost:3000`.
-
-### Required Environment Variables
-
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | MySQL connection string |
-| `JWT_SECRET` | Session cookie signing secret |
-| `BUILT_IN_FORGE_API_KEY` | LLM API key (Manus Forge) |
-| `BUILT_IN_FORGE_API_URL` | LLM API base URL |
-| `STRIPE_SECRET_KEY` | Stripe secret key |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (frontend) |
-| `VITE_APP_ID` | Manus OAuth app ID |
-| `OAUTH_SERVER_URL` | Manus OAuth backend URL |
-| `VITE_OAUTH_PORTAL_URL` | Manus login portal URL |
-
-Optional:
-
-| Variable | Purpose |
-|---|---|
-| `MAILCHIMP_API_KEY` | Activates real Mailchimp sync (stub mode when absent) |
-| `MAILCHIMP_LIST_ID` | Mailchimp audience list ID |
+The app runs locally at `http://localhost:3000`.
 
 ---
 
-## Running Tests
+## Required Environment Variables
+
+| Variable | Scope | Purpose |
+|---|---|---|
+| `SUPABASE_URL` | Server | Supabase project URL |
+| `SUPABASE_ANON_KEY` | Server | Supabase anon key used for token validation fallback |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server | Supabase service role key for backend database and storage operations |
+| `SUPABASE_STORAGE_BUCKET` | Server | Resume upload bucket, defaults to `resume-uploads` |
+| `OPENAI_API_KEY` | Server | Direct OpenAI-compatible API key |
+| `OPENAI_BASE_URL` | Server | Optional OpenAI-compatible base URL, defaults to OpenAI |
+| `OPENAI_MODEL` | Server | Optional model override, defaults to `gpt-4.1-mini` |
+| `VITE_SUPABASE_URL` | Client | Supabase project URL exposed to browser |
+| `VITE_SUPABASE_ANON_KEY` | Client | Supabase anon key exposed to browser |
+
+Optional email-capture variables are `MAILCHIMP_API_KEY`, `MAILCHIMP_AUDIENCE_ID`, and `MAILCHIMP_SERVER_PREFIX`. Mailchimp remains in stub mode when they are absent.
+
+---
+
+## Validation
 
 ```bash
+pnpm check
+pnpm build
 pnpm test
 ```
 
-9 tests across 3 suites: rewrite engine scoring, Mailchimp stub, and auth logout.
-
----
-
-## Stripe Setup
-
-1. Claim the Stripe sandbox at the URL provided in the Manus project dashboard.
-2. Test payments with card `4242 4242 4242 4242`.
-3. For production, replace test keys with live keys in Settings after Stripe KYC.
+The current test suite covers rewrite-engine pure helpers and the Mailchimp stub path. The production build may warn about large client chunks; that is a code-splitting optimization warning, not a functional failure.
 
 ---
 
 ## Admin Access
 
-To promote a user to admin, update their `role` field to `admin` directly in the database.
+To promote a user to admin, update the user profile `role` field to `admin` directly in Supabase. The admin screen reports operational metrics and CSV exports only; it does not include revenue or subscription reporting.
 
 ---
 
 ## Brand
 
-EO50 color palette applied throughout:
-
-- Navy: `#1a1a2e`
-- Gold: `#d4a843`
-- White: `#ffffff`
-- Light Gray: `#f5f5f5`
-
-No em dashes appear anywhere in user-facing copy, emails, or AI-generated content. No stock photos. No third-party branding.
+JASS uses a professional navy and gold visual system. All user-facing copy, metadata, generated document metadata, and UI branding now refer to **JASS**. No legacy platform branding, external platform dependency, or payment-flow language should appear in active application code.
 
 ---
 

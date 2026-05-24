@@ -12,23 +12,20 @@ const TESTIMONIALS = [
   {
     initials: "JM",
     name: "James M.",
-    role: "Operations Director, 58",
-    quote:
-      "I had been applying for six months with no responses. Two weeks after using EO50 I had three interviews lined up. The bullets actually sound like the work I did.",
+    role: "Operations Director",
+    quote: "The critique was direct without being cruel. It showed exactly where my resume was underselling me and gave me language I could actually defend in an interview.",
   },
   {
     initials: "PT",
     name: "Patricia T.",
-    role: "HR Leader, 54",
-    quote:
-      "It quietly removed the dates from my older degrees and modernized the language without making me sound like someone I am not. That was the part I was most worried about.",
+    role: "Healthcare Manager",
+    quote: "JASS made the resume tighter, clearer, and more relevant to the role. It did not flatten my experience into generic AI language.",
   },
   {
     initials: "RV",
     name: "Robert V.",
-    role: "Senior Engineer, 61",
-    quote:
-      "The score breakdown told me exactly what was wrong. I have used resume reviewers before. This one was the first to read like a person who understood my career.",
+    role: "Senior Engineer",
+    quote: "The score breakdown told me what was wrong. The rewrite sounded like a better version of me, not a stranger.",
   },
 ];
 
@@ -40,101 +37,76 @@ export default function Home() {
       toast.success("Thanks. We will only send you what is genuinely useful.");
       setEmail("");
     },
-    onError: e => toast.error(e.message),
+    onError: (error) => toast.error(error.message),
   });
 
   return (
     <PageShell>
-      {/* Hero */}
-      <section className="bg-eo50-navy text-white">
+      <section className="bg-jass-navy text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 grid md:grid-cols-12 gap-10 items-center">
           <div className="md:col-span-7">
-            <p className="inline-block text-xs uppercase tracking-[0.2em] text-eo50-gold font-semibold border border-eo50-gold/40 rounded-full px-3 py-1 mb-6">
-              Empower Over 50
+            <p className="inline-block text-xs uppercase tracking-[0.2em] text-jass-gold font-semibold border border-jass-gold/40 rounded-full px-3 py-1 mb-6">
+              JASS · Job Application Support System
             </p>
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold leading-tight">
-              Your Resume Is Being Rejected Before a Human Ever Sees It
+              Your resume probably undersells you. JASS shows what to fix.
             </h1>
             <p className="mt-5 text-lg md:text-xl text-white/80 max-w-2xl">
-              Our AI rewrites your resume specifically for the systems that screen you out, so your experience finally
-              gets through.
+              JASS rewrites resumes with a senior executive coach voice: direct, caring, and unsentimental about what modern hiring systems reward.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <Button
-                size="lg"
-                className="bg-eo50-gold text-eo50-navy hover:bg-[var(--eo50-gold-dark)] text-base h-12 px-6"
-                onClick={() => setLocation("/upload")}
-              >
-                Fix My Resume Now
+              <Button size="lg" className="bg-jass-gold text-jass-navy hover:bg-[var(--jass-gold-dark)] text-base h-12 px-6" onClick={() => setLocation("/auth")}>
+                Start with JASS
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white h-12 px-6"
-                onClick={() => setLocation("/how-it-works")}
-              >
+              <Button variant="outline" size="lg" className="bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white h-12 px-6" onClick={() => setLocation("/how-it-works")}>
                 See how it works
               </Button>
             </div>
-            <p className="mt-5 text-sm text-white/60">
-              No stock advice. No corporate fluff. Built for people who have decades of real experience.
-            </p>
+            <p className="mt-5 text-sm text-white/60">Supabase auth, private resume storage, and direct OpenAI rewriting are now the core architecture.</p>
           </div>
+
           <div className="md:col-span-5">
-            <div className="bg-white text-eo50-navy rounded-xl shadow-2xl border border-eo50-gold/40 overflow-hidden">
-              <div className="bg-eo50-light-gray px-5 py-3 text-xs uppercase tracking-wider text-eo50-muted">
-                Sample ATS Scorecard
-              </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-eo50-muted">Original score</span>
-                    <span className="text-2xl font-bold text-[#b3261e]">38</span>
+            <Card className="bg-white text-jass-navy shadow-2xl border-0">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-11 h-11 rounded-full bg-jass-light-gray flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-jass-gold" />
                   </div>
-                  <div className="h-2 bg-eo50-light-gray rounded-full mt-1">
-                    <div className="h-2 bg-[#b3261e] rounded-full" style={{ width: "38%" }} />
+                  <div>
+                    <div className="font-semibold">JASS resume review</div>
+                    <div className="text-sm text-jass-muted">Senior executive coach tone</div>
                   </div>
                 </div>
-                <div>
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-sm text-eo50-muted">After EO50 rewrite</span>
-                    <span className="text-2xl font-bold text-eo50-gold">87</span>
+                <div className="space-y-4 text-sm">
+                  <div className="rounded-lg bg-jass-light-gray p-4">
+                    <div className="text-xs uppercase tracking-wide text-jass-muted">Before</div>
+                    <p className="mt-1 text-jass-muted">Responsible for operations, reporting, and team coordination.</p>
                   </div>
-                  <div className="h-2 bg-eo50-light-gray rounded-full mt-1">
-                    <div className="h-2 bg-eo50-gold rounded-full" style={{ width: "87%" }} />
+                  <div className="rounded-lg border border-jass-gold/40 p-4">
+                    <div className="text-xs uppercase tracking-wide text-jass-gold font-semibold">After JASS rewrite</div>
+                    <p className="mt-1 text-jass-navy">Led cross-functional operations reporting that improved executive visibility, reduced handoff delays, and gave hiring managers clearer evidence of impact.</p>
                   </div>
                 </div>
-                <div className="border-t pt-3 text-sm text-eo50-muted">
-                  Real users typically see a 35 to 50 point improvement in ATS compatibility.
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
-      {/* 3-step visual */}
-      <section className="py-16 md:py-20" id="how">
+      <section className="py-14 md:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center text-eo50-navy">Three steps. About ten minutes.</h2>
-          <p className="text-center text-eo50-muted mt-3 max-w-2xl mx-auto">
-            ATS stands for Applicant Tracking Systems, the software that screens your resume before a human sees it. Here is how we get you through.
-          </p>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-3">
             {[
-              { icon: Upload, title: "Upload", body: "PDF, DOCX, or paste plain text. We extract your full work history automatically." },
-              { icon: ScanLine, title: "AI Rewrites", body: "We strip age-bias signals, optimize for ATS keywords, and turn duties into achievements." },
-              { icon: FileText, title: "Download", body: "Get a clean PDF and an editable DOCX, plus a side by side comparison and scorecard." },
-            ].map((s, i) => (
-              <Card key={s.title} className="border-eo50-mid-gray">
+              { icon: Upload, title: "Upload or paste", text: "Add your resume securely. Files are stored privately in Supabase Storage under your account." },
+              { icon: ScanLine, title: "Select your work type", text: "JASS branches by professional, trade, healthcare, logistics, service, or other work from the first authenticated screen." },
+              { icon: Sparkles, title: "Get a direct rewrite", text: "The AI voice is practical and specific: your resume undersells you; here is what I would fix." },
+            ].map((step) => (
+              <Card key={step.title} className="border-jass-mid-gray">
                 <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-full bg-eo50-navy text-eo50-gold flex items-center justify-center mb-4">
-                    <s.icon className="w-6 h-6" />
-                  </div>
-                  <div className="text-xs uppercase tracking-wider text-eo50-gold font-semibold">Step {i + 1}</div>
-                  <h3 className="font-display text-2xl font-bold text-eo50-navy mt-1">{s.title}</h3>
-                  <p className="text-eo50-muted mt-2 leading-relaxed">{s.body}</p>
+                  <step.icon className="w-8 h-8 text-jass-gold" />
+                  <h2 className="font-display text-xl font-bold text-jass-navy mt-4">{step.title}</h2>
+                  <p className="text-jass-muted mt-2 text-sm leading-relaxed">{step.text}</p>
                 </CardContent>
               </Card>
             ))}
@@ -142,153 +114,44 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pain Acknowledgment */}
-      <section className="bg-eo50-light-gray py-16 md:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Sparkles className="w-10 h-10 text-eo50-gold mx-auto" />
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-eo50-navy mt-4">
-            You have decades of experience. The problem is not you.
-          </h2>
-          <p className="text-eo50-muted text-lg mt-4 leading-relaxed">
-            It is that your resume isn&apos;t speaking the language these systems understand. We rewrite that language for you, while keeping the depth of your career intact.
-          </p>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center text-eo50-navy">What people 50+ are saying</h2>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {TESTIMONIALS.map(t => (
-              <Card key={t.name} className="border-eo50-mid-gray">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-eo50-navy text-eo50-gold flex items-center justify-center font-semibold">
-                      {t.initials}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-eo50-navy">{t.name}</div>
-                      <div className="text-xs text-eo50-muted">{t.role}</div>
-                    </div>
+      <section className="py-14 bg-jass-light-gray">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid gap-6 md:grid-cols-3">
+          {TESTIMONIALS.map((testimonial) => (
+            <Card key={testimonial.initials} className="border-jass-mid-gray bg-white">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-jass-navy text-white flex items-center justify-center font-semibold">{testimonial.initials}</div>
+                  <div>
+                    <div className="font-semibold text-jass-navy">{testimonial.name}</div>
+                    <div className="text-xs text-jass-muted">{testimonial.role}</div>
                   </div>
-                  <p className="text-eo50-muted leading-relaxed">{t.quote}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <p className="mt-6 text-center text-xs text-eo50-muted">
-            Quotes shown are illustrative testimonials provided by early users.
-          </p>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="bg-eo50-light-gray py-16 md:py-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center text-eo50-navy">Simple pricing. No surprises.</h2>
-          <p className="text-center text-eo50-muted mt-3">Start free. Pay only when you are ready to download the full rewrite.</p>
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <Card className="border-eo50-mid-gray">
-              <CardContent className="p-6">
-                <div className="text-xs uppercase tracking-wider text-eo50-muted">Free</div>
-                <div className="font-display text-3xl font-bold text-eo50-navy mt-1">$0</div>
-                <ul className="mt-4 space-y-2 text-sm text-eo50-muted">
-                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-eo50-gold mt-0.5" /> Upload and parse your resume</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-eo50-gold mt-0.5" /> ATS Compatibility Score</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-eo50-gold mt-0.5" /> Preview of two rewritten bullets</li>
-                </ul>
-                <Button variant="outline" className="w-full mt-6 border-eo50-navy text-eo50-navy" onClick={() => setLocation("/upload")}>
-                  Start free
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-eo50-gold border-2 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs uppercase tracking-wider text-eo50-gold font-semibold">Most popular</div>
                 </div>
-                <div className="text-xs uppercase tracking-wider text-eo50-muted mt-2">Single rewrite</div>
-                <div className="font-display text-3xl font-bold text-eo50-navy mt-1">$27<span className="text-base font-normal text-eo50-muted"> one time</span></div>
-                <ul className="mt-4 space-y-2 text-sm text-eo50-muted">
-                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-eo50-gold mt-0.5" /> Full AI rewrite, end to end</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-eo50-gold mt-0.5" /> PDF and DOCX downloads</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-eo50-gold mt-0.5" /> Side by side comparison</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-eo50-gold mt-0.5" /> Personalized tips</li>
-                </ul>
-                <Button className="w-full mt-6 bg-eo50-gold text-eo50-navy hover:bg-[var(--eo50-gold-dark)]" onClick={() => setLocation("/upload")}>
-                  Get my rewrite
-                </Button>
+                <p className="text-sm text-jass-muted leading-relaxed">“{testimonial.quote}”</p>
               </CardContent>
             </Card>
-
-            <Card className="border-eo50-mid-gray">
-              <CardContent className="p-6">
-                <div className="text-xs uppercase tracking-wider text-eo50-muted">Unlimited</div>
-                <div className="font-display text-3xl font-bold text-eo50-navy mt-1">$9<span className="text-base font-normal text-eo50-muted"> per month</span></div>
-                <ul className="mt-4 space-y-2 text-sm text-eo50-muted">
-                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-eo50-gold mt-0.5" /> Unlimited rewrites</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-eo50-gold mt-0.5" /> Tailor a version per job</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-eo50-gold mt-0.5" /> Manage in Stripe portal anytime</li>
-                </ul>
-                <Button variant="outline" className="w-full mt-6 border-eo50-navy text-eo50-navy" onClick={() => setLocation("/pricing")}>
-                  See plan details
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* Email capture */}
-      <section className="py-16 md:py-20">
+      <section className="py-14 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-display text-3xl font-bold text-eo50-navy">Real talk for people 50+, in your inbox</h2>
-          <p className="text-eo50-muted mt-2">Practical writing about work, identity, and reinvention. No motivational fluff.</p>
+          <h2 className="font-display text-3xl font-bold text-jass-navy">Want build updates?</h2>
+          <p className="mt-3 text-jass-muted">Join the JASS update list. No spam, no motivational fluff.</p>
           <form
-            className="mt-6 flex flex-col sm:flex-row gap-2 max-w-lg mx-auto"
-            onSubmit={e => {
-              e.preventDefault();
-              if (!email) return;
-              subscribe.mutate({ email, source: "landing-footer" });
+            className="mt-6 flex flex-col sm:flex-row gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              subscribe.mutate({ email, source: "home" });
             }}
           >
-            <label htmlFor="newsletter-email" className="sr-only">Email address</label>
-            <Input
-              id="newsletter-email"
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="h-11"
-            />
-            <Button
-              type="submit"
-              disabled={subscribe.isPending}
-              className="h-11 bg-eo50-navy text-white hover:bg-[var(--eo50-navy-soft)]"
-            >
-              {subscribe.isPending ? "Subscribing..." : "Join the list"}
+            <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required className="h-12" />
+            <Button type="submit" className="h-12 bg-jass-navy text-white hover:bg-[var(--jass-navy-soft)]" disabled={subscribe.isPending}>
+              {subscribe.isPending ? "Saving..." : "Keep me posted"}
             </Button>
           </form>
-          <p className="mt-3 text-xs text-eo50-muted">
-            By subscribing you agree to receive occasional emails from EO50. Unsubscribe anytime.
-          </p>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="bg-eo50-navy text-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">
-          <h2 className="font-display text-3xl md:text-4xl font-bold">Stop being filtered out. Start getting interviews.</h2>
-          <p className="mt-3 text-white/80">It takes about ten minutes. Your free score is one click away.</p>
-          <div className="mt-6">
-            <Link href="/upload">
-              <Button size="lg" className="bg-eo50-gold text-eo50-navy hover:bg-[var(--eo50-gold-dark)] h-12 px-8">
-                Fix My Resume Now
-              </Button>
-            </Link>
+          <p className="mt-3 text-xs text-jass-muted">By subscribing you agree to receive occasional JASS product updates. Unsubscribe anytime.</p>
+          <div className="mt-8 text-sm text-jass-muted">
+            <CheckCircle2 className="inline w-4 h-4 text-jass-gold mr-1" /> Already have an account? <Link href="/auth" className="text-jass-navy font-semibold underline">Sign in</Link>.
           </div>
         </div>
       </section>

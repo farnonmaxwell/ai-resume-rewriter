@@ -3,75 +3,70 @@ import { adminProcedure, router } from "../_core/trpc";
 
 export const adminRouter = router({
   overview: adminProcedure.query(async () => {
-    const [users, rewrites, payments] = await Promise.all([
+    const [users, rewrites] = await Promise.all([
       db.listAllUsers(),
       db.listAllRewrites(500),
-      db.listAllPayments(),
     ]);
-    const totalRevenueCents = payments
-      .filter(p => p.status === "succeeded" || p.status === "paid")
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-    const activeSubs = users.filter(u => ["active", "trialing"].includes((u.subscriptionStatus ?? "").toLowerCase())).length;
     return {
       totalUsers: users.length,
       totalRewrites: rewrites.length,
-      paidRewrites: rewrites.filter(r => r.paid).length,
-      activeSubscribers: activeSubs,
-      totalRevenueCents,
+      completedRewrites: rewrites.filter((rewrite) => rewrite.status === "rewritten").length,
+      scoredRewrites: rewrites.filter((rewrite) => rewrite.status === "scored").length,
+      feedbackOptIns: 0,
     };
   }),
 
   users: adminProcedure.query(async () => {
     const users = await db.listAllUsers();
-    return users.map(u => ({
-      id: u.id,
-      email: u.email,
-      name: u.name,
-      role: u.role,
-      subscriptionStatus: u.subscriptionStatus,
-      emailSubscribed: u.emailSubscribed,
-      createdAt: u.createdAt,
-      lastSignedIn: u.lastSignedIn,
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      emailSubscribed: user.emailSubscribed,
+      createdAt: user.createdAt,
+      lastSignedIn: user.lastSignedIn,
     }));
   }),
 
   rewrites: adminProcedure.query(async () => {
     const rows = await db.listAllRewrites(500);
-    return rows.map(r => ({
-      id: r.id,
-      userId: r.userId,
-      roleType: r.roleType,
-      industry: r.industry,
-      atsScore: r.atsScore,
-      paid: r.paid,
-      status: r.status,
-      createdAt: r.createdAt,
+    return rows.map((rewrite) => ({
+      id: rewrite.id,
+      userId: rewrite.userId,
+      roleType: rewrite.roleType,
+      jobType: rewrite.jobType,
+      industry: rewrite.industry,
+      atsScore: rewrite.atsScore,
+      status: rewrite.status,
+      createdAt: rewrite.createdAt,
     }));
-  }),
-
-  payments: adminProcedure.query(async () => {
-    return await db.listAllPayments();
   }),
 
   exportUserEmailsCsv: adminProcedure.query(async () => {
     const users = await db.listAllUsers();
-    const subs = await db.listEmailSubscribers();
-    const rows = [["email", "name", "role", "subscriptionStatus", "createdAt", "source"]];
-    for (const u of users) {
-      if (!u.email) continue;
+    const subscribers = await db.listEmailSubscribers();
+    const rows = [["email", "name", "role", "createdAt", "source"]];
+    for (const user of users) {
+      if (!user.email) continue;
       rows.push([
-        u.email,
-        u.name ?? "",
-        u.role,
-        u.subscriptionStatus ?? "",
-        u.createdAt.toISOString(),
+        user.email,
+        user.name ?? "",
+        user.role,
+        user.createdAt?.toISOString() ?? "",
         "user",
       ]);
     }
-    for (const s of subs) {
-      rows.push([s.email, "", "", "", s.createdAt.toISOString(), s.source ?? "subscriber"]);
+    for (const subscriber of subscribers) {
+      rows.push([
+        subscriber.email,
+        "",
+        "",
+        subscriber.createdAt?.toISOString() ?? "",
+        subscriber.source ?? "subscriber",
+      ]);
     }
-    const csv = rows.map(r => r.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = rows.map((row) => row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(",")).join("\n");
     return { csv, count: rows.length - 1 };
   }),
 });

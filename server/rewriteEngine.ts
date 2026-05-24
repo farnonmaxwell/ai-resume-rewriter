@@ -1,6 +1,6 @@
 /**
- * AI Rewrite Engine for the EO50 Resume Rewriter.
- * Uses the built-in invokeLLM helper. All output is post-processed to
+ * AI Rewrite Engine for JASS.
+ * Uses direct OpenAI calls. All output is post-processed to
  * strip em dashes from any user-facing copy.
  */
 import { invokeLLM } from "./_core/llm";
@@ -8,6 +8,7 @@ import { invokeLLM } from "./_core/llm";
 export type RewriteInput = {
   originalText: string;
   roleType?: string;
+  jobType?: string;
   industry?: string;
   jobDescription?: string;
   concerns?: string[];
@@ -46,9 +47,11 @@ export type RewriteResult = {
   };
 };
 
-const SYSTEM_PROMPT = `You are a senior career coach for the EO50 (Empower Over 50) platform. You rewrite resumes for professionals 50 and over so they pass Applicant Tracking Systems and present themselves as relevant, modern candidates without sacrificing dignity or experience.
+const SYSTEM_PROMPT = `You are JASS, a senior executive coach inside an AI-powered job application support system. You rewrite resumes so candidates present clear, credible, modern evidence for the work they actually want.
 
-Your tone is direct, warm, and practical. You are a fellow traveler, not a corporate recruiter.
+Your voice is direct, caring, never sycophantic. Do not flatter. Do not patronize. Tell the user what undersells them and what you would fix. Example tone: "Your resume undersells you. Here's what I'd fix."
+
+Adapt the rewrite to the candidate's selected work type. Professional/Office applicants need strategic impact and ATS alignment. Skilled Trade applicants need credentials, tools, safety, and project scope. Healthcare applicants need credentials, compliance, patient-care context, and specialty fit. Labour/Warehouse/Logistics applicants need equipment, throughput, reliability, shift fit, and safety. Retail/Hospitality/Food Service applicants need service judgment, speed, reliability, customer outcomes, and team fit.
 
 CRITICAL FORMATTING RULES:
 - NEVER use em dashes or en dashes. Use a comma, semicolon, period, or hyphen instead.
@@ -139,6 +142,7 @@ function buildUserPrompt(input: RewriteInput): string {
   const parts: string[] = [];
   parts.push("USER INTAKE:");
   parts.push(`Target role: ${input.roleType || "(unspecified)"}`);
+  parts.push(`Selected work type: ${input.jobType || "(unspecified)"}`);
   parts.push(`Target industry: ${input.industry || "(unspecified)"}`);
   parts.push(`Years of experience to highlight: ${input.yearsToHighlight || "all"}`);
   if (input.concerns && input.concerns.length > 0) {
@@ -333,7 +337,7 @@ export async function runTeaser(input: RewriteInput): Promise<{
   ageBiasFlags: string[];
   scores: RewriteResult["scores"];
 }> {
-  const teaserPrompt = `You are an EO50 senior career coach. Take the FIRST TWO bullet points or duty statements found in the user's resume and rewrite them as strong achievement-based bullets. Quantify only if numbers exist or are obvious. NEVER use em dashes. Return JSON: {"items":[{"original":"...","rewritten":"..."}]}.
+  const teaserPrompt = `You are JASS, a senior executive coach. Take the FIRST TWO bullet points or duty statements found in the user's resume and rewrite them as strong achievement-based bullets. Be direct, caring, and practical. Quantify only if numbers exist or are obvious. NEVER use em dashes. Return JSON: {"items":[{"original":"...","rewritten":"..."}]}.
 
 ORIGINAL RESUME:
 ${input.originalText.slice(0, 4000)}`;

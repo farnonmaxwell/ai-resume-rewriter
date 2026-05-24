@@ -43,16 +43,16 @@
 }
 
 :root {
-  /* EO50 Brand Palette: Navy #1a1a2e, Gold #d4a843, White, Light Gray */
-  --eo50-navy: #1a1a2e;
-  --eo50-navy-soft: #2c2c4a;
-  --eo50-gold: #d4a843;
-  --eo50-gold-dark: #b88c2f;
-  --eo50-white: #ffffff;
-  --eo50-light-gray: #f4f4f6;
-  --eo50-mid-gray: #e5e6ea;
-  --eo50-text: #1a1a2e;
-  --eo50-muted: #5b5b6c;
+  /* JASS Brand Palette: Navy #1a1a2e, Gold #d4a843, White, Light Gray */
+  --jass-navy: #1a1a2e;
+  --jass-navy-soft: #2c2c4a;
+  --jass-gold: #d4a843;
+  --jass-gold-dark: #b88c2f;
+  --jass-white: #ffffff;
+  --jass-light-gray: #f4f4f6;
+  --jass-mid-gray: #e5e6ea;
+  --jass-text: #1a1a2e;
+  --jass-muted: #5b5b6c;
 
   --primary: #1a1a2e;
   --primary-foreground: #ffffff;
@@ -173,22 +173,22 @@
 
   /* Global focus outline for WCAG accessibility */
   *:focus-visible {
-    outline: 3px solid var(--eo50-gold);
+    outline: 3px solid var(--jass-gold);
     outline-offset: 2px;
   }
 
   /* Brand utility classes */
-  .bg-eo50-navy { background-color: var(--eo50-navy); }
-  .bg-eo50-gold { background-color: var(--eo50-gold); }
-  .bg-eo50-light-gray { background-color: var(--eo50-light-gray); }
-  .text-eo50-navy { color: var(--eo50-navy); }
-  .text-eo50-gold { color: var(--eo50-gold); }
-  .text-eo50-muted { color: var(--eo50-muted); }
-  .border-eo50-gold { border-color: var(--eo50-gold); }
-  .border-eo50-navy { border-color: var(--eo50-navy); }
-  .border-eo50-mid-gray { border-color: var(--eo50-mid-gray); }
-  .bg-eo50-mid-gray { background-color: var(--eo50-mid-gray); }
-  .bg-eo50-white { background-color: var(--eo50-white); }
+  .bg-jass-navy { background-color: var(--jass-navy); }
+  .bg-jass-gold { background-color: var(--jass-gold); }
+  .bg-jass-light-gray { background-color: var(--jass-light-gray); }
+  .text-jass-navy { color: var(--jass-navy); }
+  .text-jass-gold { color: var(--jass-gold); }
+  .text-jass-muted { color: var(--jass-muted); }
+  .border-jass-gold { border-color: var(--jass-gold); }
+  .border-jass-navy { border-color: var(--jass-navy); }
+  .border-jass-mid-gray { border-color: var(--jass-mid-gray); }
+  .bg-jass-mid-gray { background-color: var(--jass-mid-gray); }
+  .bg-jass-white { background-color: var(--jass-white); }
 
   /* Brand serif heading font (loaded via index.html) */
   .font-display {

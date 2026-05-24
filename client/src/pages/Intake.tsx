@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
+import { BLS_INDUSTRIES } from "@shared/jass";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -27,23 +28,6 @@ const ROLE_TYPES = [
   "Vice President",
   "C-Suite / Executive",
   "Consultant / Independent",
-  "Other",
-];
-
-const INDUSTRIES = [
-  "Technology",
-  "Finance and Banking",
-  "Healthcare",
-  "Education",
-  "Manufacturing",
-  "Retail and Consumer",
-  "Government and Public Sector",
-  "Nonprofit",
-  "Marketing and Communications",
-  "Operations and Supply Chain",
-  "Human Resources",
-  "Legal",
-  "Real Estate",
   "Other",
 ];
 
@@ -63,10 +47,11 @@ const YEARS_OPTIONS = ["Last 10 years", "Last 15 years", "Last 20 years", "All e
 export default function IntakePage() {
   const [, params] = useRoute<{ id: string }>("/intake/:id");
   const [, setLocation] = useLocation();
-  const id = Number(params?.id || 0);
+  const id = params?.id || "";
   const [step, setStep] = useState(1);
   const [roleType, setRoleType] = useState("");
   const [industry, setIndustry] = useState("");
+  const [industryOther, setIndustryOther] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [concerns, setConcerns] = useState<string[]>([]);
   const [yearsToHighlight, setYearsToHighlight] = useState("");
@@ -79,11 +64,17 @@ export default function IntakePage() {
   const back = () => setStep(s => Math.max(1, s - 1));
 
   const handleFinish = async () => {
+    if (industry === "Other" && !industryOther.trim()) {
+      toast.error("Choose Other only if you tell JASS the industry.");
+      return;
+    }
+
     try {
       await save.mutateAsync({
         id,
         roleType: roleType || undefined,
         industry: industry || undefined,
+        industryOther: industry === "Other" ? industryOther.trim() : null,
         jobDescription: jobDescription || undefined,
         concerns,
         yearsToHighlight: yearsToHighlight || undefined,
@@ -98,7 +89,7 @@ export default function IntakePage() {
     return (
       <PageShell>
         <div className="py-20 text-center">
-          <p className="text-eo50-muted">Missing rewrite id.</p>
+          <p className="text-jass-muted">Missing rewrite id.</p>
           <Button className="mt-4" onClick={() => setLocation("/upload")}>Start over</Button>
         </div>
       </PageShell>
@@ -107,9 +98,9 @@ export default function IntakePage() {
 
   return (
     <PageShell>
-      <section className="bg-eo50-navy text-white">
+      <section className="bg-jass-navy text-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="text-xs uppercase tracking-wider text-eo50-gold">Step 2: Targeting</div>
+          <div className="text-xs uppercase tracking-wider text-jass-gold">Step 2: Targeting</div>
           <h1 className="font-display text-3xl md:text-4xl font-bold mt-2">A few questions to tailor your rewrite</h1>
           <p className="mt-2 text-white/80">Answer honestly. The more we know, the better the rewrite.</p>
         </div>
@@ -118,19 +109,19 @@ export default function IntakePage() {
       <section className="py-10 md:py-14">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6">
-            <div className="flex justify-between text-sm text-eo50-muted mb-2">
+            <div className="flex justify-between text-sm text-jass-muted mb-2">
               <span>Step {step} of {totalSteps}</span>
               <span>{Math.round(progress)}% complete</span>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
 
-          <Card className="border-eo50-mid-gray">
+          <Card className="border-jass-mid-gray">
             <CardContent className="p-6">
               {step === 1 && (
                 <div>
-                  <Label className="text-base text-eo50-navy">What kind of role are you targeting?</Label>
-                  <p className="text-sm text-eo50-muted mb-3">This shapes how we frame leadership and scope.</p>
+                  <Label className="text-base text-jass-navy">What kind of role are you targeting?</Label>
+                  <p className="text-sm text-jass-muted mb-3">This shapes how we frame leadership and scope.</p>
                   <Select value={roleType} onValueChange={setRoleType}>
                     <SelectTrigger className="h-11"><SelectValue placeholder="Choose a role type" /></SelectTrigger>
                     <SelectContent>
@@ -141,39 +132,45 @@ export default function IntakePage() {
               )}
               {step === 2 && (
                 <div>
-                  <Label className="text-base text-eo50-navy">Industry or function</Label>
-                  <p className="text-sm text-eo50-muted mb-3">If you are switching industries, pick the one you are moving into.</p>
+                  <Label className="text-base text-jass-navy">Industry or function</Label>
+                  <p className="text-sm text-jass-muted mb-3">If you are switching industries, pick the one you are moving into.</p>
                   <Select value={industry} onValueChange={setIndustry}>
                     <SelectTrigger className="h-11"><SelectValue placeholder="Choose an industry" /></SelectTrigger>
                     <SelectContent>
-                      {INDUSTRIES.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                      {BLS_INDUSTRIES.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  {industry === "Other" && (
+                    <div className="mt-4 space-y-2">
+                      <Label htmlFor="industryOther" className="text-jass-navy">Describe the industry</Label>
+                      <Input id="industryOther" value={industryOther} onChange={(event) => setIndustryOther(event.target.value)} placeholder="Tell JASS the exact industry" />
+                    </div>
+                  )}
                 </div>
               )}
               {step === 3 && (
                 <div>
-                  <Label htmlFor="jd" className="text-base text-eo50-navy">Paste a target job description (optional)</Label>
-                  <p className="text-sm text-eo50-muted mb-3">We extract ATS keywords directly from this. Leaving it blank still works.</p>
+                  <Label htmlFor="jd" className="text-base text-jass-navy">Paste a target job description (optional)</Label>
+                  <p className="text-sm text-jass-muted mb-3">We extract ATS keywords directly from this. Leaving it blank still works.</p>
                   <Textarea id="jd" rows={10} value={jobDescription} onChange={e => setJobDescription(e.target.value)} placeholder="Paste the full job posting here..." />
                 </div>
               )}
               {step === 4 && (
                 <div>
-                  <Label className="text-base text-eo50-navy">What are your biggest concerns?</Label>
-                  <p className="text-sm text-eo50-muted mb-3">Select all that apply. We will address them directly.</p>
+                  <Label className="text-base text-jass-navy">What are your biggest concerns?</Label>
+                  <p className="text-sm text-jass-muted mb-3">Select all that apply. We will address them directly.</p>
                   <div className="grid sm:grid-cols-2 gap-3">
                     {CONCERNS.map(c => {
                       const checked = concerns.includes(c);
                       return (
-                        <label key={c} className={`flex items-start gap-3 p-3 rounded border cursor-pointer ${checked ? "border-eo50-gold bg-eo50-light-gray" : "border-eo50-mid-gray"}`}>
+                        <label key={c} className={`flex items-start gap-3 p-3 rounded border cursor-pointer ${checked ? "border-jass-gold bg-jass-light-gray" : "border-jass-mid-gray"}`}>
                           <Checkbox
                             checked={checked}
                             onCheckedChange={(v) => {
                               setConcerns(prev => v ? [...prev, c] : prev.filter(x => x !== c));
                             }}
                           />
-                          <span className="text-sm text-eo50-navy leading-snug">{c}</span>
+                          <span className="text-sm text-jass-navy leading-snug">{c}</span>
                         </label>
                       );
                     })}
@@ -182,11 +179,11 @@ export default function IntakePage() {
               )}
               {step === 5 && (
                 <div>
-                  <Label className="text-base text-eo50-navy">How many years of experience should we highlight?</Label>
-                  <p className="text-sm text-eo50-muted mb-3">For most candidates 50+, 10 to 15 years is the sweet spot for ATS systems.</p>
+                  <Label className="text-base text-jass-navy">How many years of experience should we highlight?</Label>
+                  <p className="text-sm text-jass-muted mb-3">For most candidates 50+, 10 to 15 years is the sweet spot for ATS systems.</p>
                   <div className="grid sm:grid-cols-2 gap-3">
                     {YEARS_OPTIONS.map(y => (
-                      <label key={y} className={`flex items-center gap-3 p-3 rounded border cursor-pointer ${yearsToHighlight === y ? "border-eo50-gold bg-eo50-light-gray" : "border-eo50-mid-gray"}`}>
+                      <label key={y} className={`flex items-center gap-3 p-3 rounded border cursor-pointer ${yearsToHighlight === y ? "border-jass-gold bg-jass-light-gray" : "border-jass-mid-gray"}`}>
                         <input
                           type="radio"
                           name="years"
@@ -195,7 +192,7 @@ export default function IntakePage() {
                           onChange={() => setYearsToHighlight(y)}
                           className="accent-[#d4a843]"
                         />
-                        <span className="text-sm text-eo50-navy">{y}</span>
+                        <span className="text-sm text-jass-navy">{y}</span>
                       </label>
                     ))}
                   </div>
@@ -203,15 +200,15 @@ export default function IntakePage() {
               )}
 
               <div className="mt-8 flex justify-between">
-                <Button variant="outline" onClick={back} disabled={step === 1} className="border-eo50-navy text-eo50-navy">
+                <Button variant="outline" onClick={back} disabled={step === 1} className="border-jass-navy text-jass-navy">
                   <ArrowLeft className="w-4 h-4 mr-2" /> Back
                 </Button>
                 {step < totalSteps ? (
-                  <Button onClick={next} className="bg-eo50-navy text-white hover:bg-[var(--eo50-navy-soft)]">
+                  <Button onClick={next} className="bg-jass-navy text-white hover:bg-[var(--jass-navy-soft)]">
                     Next <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 ) : (
-                  <Button onClick={handleFinish} disabled={save.isPending} className="bg-eo50-gold text-eo50-navy hover:bg-[var(--eo50-gold-dark)]">
+                  <Button onClick={handleFinish} disabled={save.isPending} className="bg-jass-gold text-jass-navy hover:bg-[var(--jass-gold-dark)]">
                     {save.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "See my score"}
                   </Button>
                 )}
