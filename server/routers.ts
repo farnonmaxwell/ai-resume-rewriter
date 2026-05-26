@@ -27,11 +27,18 @@ export const appRouter = router({
           targetRole: z.string().max(160).optional().nullable(),
           industry: z.enum(industryValues),
           industryOther: z.string().max(160).optional().nullable(),
+          targetIndustry: z.enum(industryValues).optional().nullable(),
+          targetIndustryOther: z.string().max(160).optional().nullable(),
           feedbackOptIn: z.boolean().optional(),
-        }).refine((value) => value.industry !== "Other" || Boolean(value.industryOther?.trim()), {
-          message: "Please describe your industry when choosing Other.",
-          path: ["industryOther"],
-        }),
+        })
+          .refine((value) => value.industry !== "Other" || Boolean(value.industryOther?.trim()), {
+            message: "Please describe the industry you are coming from when choosing Other.",
+            path: ["industryOther"],
+          })
+          .refine((value) => value.targetIndustry !== "Other" || Boolean(value.targetIndustryOther?.trim()), {
+            message: "Please describe the industry you are targeting when choosing Other.",
+            path: ["targetIndustryOther"],
+          }),
       )
       .mutation(async ({ ctx, input }) => {
         return await db.upsertProfile(ctx.user.id, input);

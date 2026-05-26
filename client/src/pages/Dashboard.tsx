@@ -7,12 +7,24 @@ import { getJobTypeConfig } from "@shared/jass";
 import { Download, FileText, Loader2, Sparkles } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
+function titleCaseName(value?: string | null): string {
+  const raw = (value || "").trim();
+  if (!raw) return "";
+  return raw
+    .split(/\s+/)
+    .map(part => part.length <= 2 && part === part.toUpperCase() ? part : part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export default function DashboardPage() {
   const { user, isAuthenticated, loading } = useAuth();
   const [, setLocation] = useLocation();
   const history = trpc.rewrites.myHistory.useQuery(undefined, { enabled: isAuthenticated });
   const profile = trpc.profile.get.useQuery(undefined, { enabled: isAuthenticated });
   const jobTypeConfig = getJobTypeConfig(profile.data?.jobType);
+  const displayName = titleCaseName(user?.name) || user?.email || "JASS user";
+  const scoredRewrites = (history.data ?? []).filter(rewrite => typeof rewrite.atsScore === "number");
+  const bestScore = scoredRewrites.length ? Math.max(...scoredRewrites.map(rewrite => rewrite.atsScore ?? 0)) : 0;
 
   if (loading) return <PageShell><div className="py-24 text-center"><Loader2 className="w-8 h-8 animate-spin text-jass-gold mx-auto" /></div></PageShell>;
 
@@ -33,7 +45,7 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <div className="text-xs uppercase tracking-wider text-jass-gold">Welcome back to JASS</div>
-            <h1 className="font-display text-3xl md:text-4xl font-bold mt-1">{user?.name || user?.email}</h1>
+            <h1 className="font-display text-3xl md:text-4xl font-bold mt-1">{displayName}</h1>
             <p className="text-white/75 mt-1 text-sm">Manage your rewrites and job-application profile.</p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -62,7 +74,7 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="text-xs uppercase tracking-wider text-jass-muted">Best score</div>
               <div className="font-display text-3xl font-bold text-jass-navy mt-1">
-                {history.data?.reduce((max, rewrite) => Math.max(max, rewrite.atsScore ?? 0), 0) || 0}
+                {bestScore}
               </div>
             </CardContent>
           </Card>

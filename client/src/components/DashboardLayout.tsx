@@ -36,6 +36,15 @@ const DEFAULT_WIDTH = 280;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 480;
 
+function titleCaseName(value?: string | null): string {
+  const raw = (value || "").trim();
+  if (!raw) return "";
+  return raw
+    .split(/\s+/)
+    .map(part => part.length <= 2 && part === part.toUpperCase() ? part : part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -113,6 +122,7 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
+  const displayName = titleCaseName(user?.name) || user?.email || "JASS user";
 
   useEffect(() => {
     if (isCollapsed) {
@@ -206,12 +216,12 @@ function DashboardLayoutContent({
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Avatar className="h-9 w-9 border shrink-0">
                     <AvatarFallback className="text-xs font-medium">
-                      {user?.name?.charAt(0).toUpperCase()}
+                      {displayName.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
+                      {displayName}
                     </p>
                     <p className="text-xs text-muted-foreground truncate mt-1.5">
                       {user?.email || "-"}

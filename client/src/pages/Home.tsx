@@ -8,33 +8,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
 
-const TESTIMONIALS = [
-  {
-    initials: "JM",
-    name: "James M.",
-    role: "Operations Director",
-    quote: "The critique was direct without being cruel. It showed exactly where my resume was underselling me and gave me language I could actually defend in an interview.",
-  },
-  {
-    initials: "PT",
-    name: "Patricia T.",
-    role: "Healthcare Manager",
-    quote: "JASS made the resume tighter, clearer, and more relevant to the role. It did not flatten my experience into generic AI language.",
-  },
-  {
-    initials: "RV",
-    name: "Robert V.",
-    role: "Senior Engineer",
-    quote: "The score breakdown told me what was wrong. The rewrite sounded like a better version of me, not a stranger.",
-  },
-];
-
 export default function Home() {
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const subscribe = trpc.marketing.subscribe.useMutation({
     onSuccess: () => {
-      toast.success("Thanks. We will only send you what is genuinely useful.");
+      toast.success("You're on the JASS update list.");
       setEmail("");
     },
     onError: (error) => toast.error(error.message),
@@ -49,10 +28,10 @@ export default function Home() {
               JASS · Job Application Support System
             </p>
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold leading-tight">
-              Your resume probably undersells you. JASS shows what to fix.
+              Beat the ATS. Move from resume review to interview.
             </h1>
             <p className="mt-5 text-lg md:text-xl text-white/80 max-w-2xl">
-              JASS rewrites resumes with a senior executive coach voice: direct, caring, and unsentimental about what modern hiring systems reward.
+              JASS rewrites your resume in your own voice, tailored to the exact job you want, so hiring systems and real people can see the fit faster.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Button size="lg" className="bg-jass-gold text-jass-navy hover:bg-[var(--jass-gold-dark)] text-base h-12 px-6" onClick={() => setLocation("/auth")}>
@@ -63,7 +42,7 @@ export default function Home() {
                 See how it works
               </Button>
             </div>
-            <p className="mt-5 text-sm text-white/60">Supabase auth, private resume storage, and direct OpenAI rewriting are now the core architecture.</p>
+            <p className="mt-5 text-sm text-white/60">Clear scoring. Honest gaps. A stronger resume for the role in front of you.</p>
           </div>
 
           <div className="md:col-span-5">
@@ -74,8 +53,8 @@ export default function Home() {
                     <FileText className="w-6 h-6 text-jass-gold" />
                   </div>
                   <div>
-                    <div className="font-semibold">JASS resume review</div>
-                    <div className="text-sm text-jass-muted">Senior executive coach tone</div>
+                    <div className="font-semibold">JASS resume rewrite</div>
+                    <div className="text-sm text-jass-muted">Your voice, sharper evidence</div>
                   </div>
                 </div>
                 <div className="space-y-4 text-sm">
@@ -98,9 +77,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid gap-6 md:grid-cols-3">
             {[
-              { icon: Upload, title: "Upload or paste", text: "Add your resume securely. Files are stored privately in Supabase Storage under your account." },
-              { icon: ScanLine, title: "Select your work type", text: "JASS branches by professional, trade, healthcare, logistics, service, or other work from the first authenticated screen." },
-              { icon: Sparkles, title: "Get a direct rewrite", text: "The AI voice is practical and specific: your resume undersells you; here is what I would fix." },
+              { icon: Upload, title: "Upload or paste", text: "Add your resume securely. Files are stored privately and encrypted." },
+              { icon: ScanLine, title: "Choose your target", text: "Tell JASS the role, work type, and industry you are aiming for so the rewrite matches the job in front of you." },
+              { icon: Sparkles, title: "Get a tailored rewrite", text: "JASS rewrites the resume in your voice, strengthens the evidence, and keeps the content honest to your actual experience." },
             ].map((step) => (
               <Card key={step.title} className="border-jass-mid-gray">
                 <CardContent className="p-6">
@@ -114,37 +93,23 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-14 bg-jass-light-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid gap-6 md:grid-cols-3">
-          {TESTIMONIALS.map((testimonial) => (
-            <Card key={testimonial.initials} className="border-jass-mid-gray bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-jass-navy text-white flex items-center justify-center font-semibold">{testimonial.initials}</div>
-                  <div>
-                    <div className="font-semibold text-jass-navy">{testimonial.name}</div>
-                    <div className="text-xs text-jass-muted">{testimonial.role}</div>
-                  </div>
-                </div>
-                <p className="text-sm text-jass-muted leading-relaxed">“{testimonial.quote}”</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section className="py-14 bg-white">
+      <section className="py-14 bg-white border-t border-jass-mid-gray">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-display text-3xl font-bold text-jass-navy">Want build updates?</h2>
+          <h2 className="font-display text-3xl font-bold text-jass-navy">Want JASS updates?</h2>
           <p className="mt-3 text-jass-muted">Join the JASS update list. No spam, no motivational fluff.</p>
           <form
             className="mt-6 flex flex-col sm:flex-row gap-3"
             onSubmit={(event) => {
               event.preventDefault();
-              subscribe.mutate({ email, source: "home" });
+              const trimmedEmail = email.trim();
+              if (!trimmedEmail) {
+                toast.error("Enter your email address first.");
+                return;
+              }
+              subscribe.mutate({ email: trimmedEmail, source: "home" });
             }}
           >
-            <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required className="h-12" />
+            <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required className="h-12" aria-label="Email address" />
             <Button type="submit" className="h-12 bg-jass-navy text-white hover:bg-[var(--jass-navy-soft)]" disabled={subscribe.isPending}>
               {subscribe.isPending ? "Saving..." : "Keep me posted"}
             </Button>

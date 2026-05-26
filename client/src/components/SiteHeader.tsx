@@ -4,10 +4,20 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
+function titleCaseName(value?: string | null): string {
+  const raw = (value || "").trim();
+  if (!raw) return "";
+  return raw
+    .split(/\s+/)
+    .map(part => part.length <= 2 && part === part.toUpperCase() ? part : part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export default function SiteHeader() {
   const { user, isAuthenticated, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
+  const displayName = titleCaseName(user?.name) || user?.email;
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -34,7 +44,7 @@ export default function SiteHeader() {
         <div className="hidden md:flex items-center gap-3">
           {isAuthenticated ? (
             <>
-              <span className="text-sm text-white/70 max-w-[160px] truncate" title={user?.email ?? ""}>{user?.name ?? user?.email}</span>
+              <span className="text-sm text-white/70 max-w-[160px] truncate" title={user?.email ?? ""}>{displayName}</span>
               <Button
                 variant="outline"
                 className="bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white"

@@ -13,6 +13,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
@@ -20,10 +21,14 @@ export default function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
+        if (!phone.trim()) {
+          toast.error("Please add a phone number so JASS can help protect your resume data.");
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: name } },
+          options: { data: { full_name: name, phone: phone.trim() } },
         });
         if (error) throw error;
         toast.success("Account created. Check your email if confirmation is enabled, then continue into JASS.");
@@ -56,10 +61,17 @@ export default function AuthPage() {
         <CardContent>
           <form onSubmit={submit} className="space-y-4">
             {mode === "signup" && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Max Farnon" />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Max Farnon" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone number</Label>
+                  <Input id="phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required placeholder="(555) 555-5555" />
+                  <p className="text-xs text-jass-muted">Required for account security because resumes contain sensitive personal information. It also helps prevent duplicate free-trial abuse.</p>
+                </div>
+              </>
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

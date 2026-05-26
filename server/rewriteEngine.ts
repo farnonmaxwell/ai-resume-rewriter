@@ -13,6 +13,7 @@ export type RewriteInput = {
   jobDescription?: string;
   concerns?: string[];
   yearsToHighlight?: string;
+  suitabilityContext?: string;
 };
 
 export type ResumeSection = {
@@ -27,6 +28,28 @@ export type ChangeAnnotation = {
   reason: string;
 };
 
+export type ScoreDeduction = {
+  category: string;
+  amount: number;
+  reason: string;
+};
+
+export type MismatchWarning = {
+  message: string;
+  gaps: string[];
+};
+
+export type RewriteScores = {
+  atsScore: number;
+  keywordScore: number;
+  formattingScore: number;
+  structureScore: number;
+  ageBiasScore: number;
+  roleFitScore: number;
+  deductions: ScoreDeduction[];
+  mismatchWarning?: MismatchWarning;
+};
+
 export type RewriteResult = {
   rewrittenText: string;
   rewrittenJson: {
@@ -38,20 +61,14 @@ export type RewriteResult = {
   changeAnnotations: ChangeAnnotation[];
   ageBiasFlags: string[];
   tips: string[];
-  scores: {
-    atsScore: number;
-    keywordScore: number;
-    formattingScore: number;
-    structureScore: number;
-    ageBiasScore: number;
-  };
+  scores: RewriteScores;
 };
 
-const SYSTEM_PROMPT = `You are JASS, a senior executive coach inside an AI-powered job application support system. You rewrite resumes so candidates present clear, credible, modern evidence for the work they actually want.
+const SYSTEM_PROMPT = `You are JASS, an honest, practical job application support system. You rewrite resumes so candidates present clear, credible, modern evidence for the work they actually want.
 
 Your voice is direct, caring, never sycophantic. Do not flatter. Do not patronize. Tell the user what undersells them and what you would fix. Example tone: "Your resume undersells you. Here's what I'd fix."
 
-Adapt the rewrite to the candidate's selected work type. Professional/Office applicants need strategic impact and ATS alignment. Skilled Trade applicants need credentials, tools, safety, and project scope. Healthcare applicants need credentials, compliance, patient-care context, and specialty fit. Labour/Warehouse/Logistics applicants need equipment, throughput, reliability, shift fit, and safety. Retail/Hospitality/Food Service applicants need service judgment, speed, reliability, customer outcomes, and team fit.
+Adapt the rewrite to the candidate's selected work type. Professional/Office applicants need strategic impact and hiring-system alignment. Administrative/Coordinator applicants need organization, follow-through, calendar or workflow ownership, stakeholder communication, accuracy, and calm execution. Skilled Trade applicants need credentials, tools, safety, and project scope. Healthcare applicants need credentials, compliance, patient-care context, and specialty fit. Labour/Warehouse/Logistics applicants need equipment, throughput, reliability, shift fit, and safety. Retail/Hospitality/Food Service applicants need service judgment, speed, reliability, customer outcomes, and team fit.
 
 CRITICAL FORMATTING RULES:
 - NEVER use em dashes or en dashes. Use a comma, semicolon, period, or hyphen instead.
@@ -149,7 +166,11 @@ function buildUserPrompt(input: RewriteInput): string {
     parts.push(`Their stated concerns: ${input.concerns.join("; ")}`);
   }
   if (input.jobDescription && input.jobDescription.trim()) {
-    parts.push("\nTARGET JOB DESCRIPTION (extract ATS keywords from here):\n" + input.jobDescription.trim());
+    parts.push("\nTARGET JOB DESCRIPTION (extract hiring keywords from here):\n" + input.jobDescription.trim());
+  }
+  if (input.suitabilityContext && input.suitabilityContext.trim()) {
+    parts.push("\nUSER CONTEXT ABOUT WHY THEY BELIEVE THIS ROLE IS A FIT:\n" + input.suitabilityContext.trim());
+    parts.push("Use this context to understand relevant background, but do not invent achievements or hide real gaps.");
   }
   parts.push("\nORIGINAL RESUME TEXT:\n" + input.originalText);
   parts.push(
@@ -229,9 +250,107 @@ export function scoreStructure(text: string): number {
   return Math.round((hits / headings.length) * 100);
 }
 
-export function computeAtsScore(parts: { keyword: number; formatting: number; structure: number; ageBias: number }): number {
+export function computeRoleFit(input: Pick<RewriteInput, "roleType" | "jobType" | "industry" | "jobDescription" | "suitabilityContext">, resume: string, keyword: { matched: string[]; missing: string[]; score: number }): { score: number; gaps: string[] } {
+  const gaps: string[] = [];
+  let score = 100;
+  const resumeTokens = new Set(tokenize(resume));
+  const resumeLower = resume.toLowerCase();
+  const jd = input.jobDescription || "";
+  const hasJobPosting = jd.trim().length > 0;
+
+  if (!hasJobPosting) {
+    return { score: 75, gaps: ["No target job posting was provided, so JASS cannot verify role-specific fit."] };
+  }
+
+  const keywordTotal = keyword.matched.length + keyword.missing.length;
+  const missingRatio = keywordTotal ? keyword.missing.length / keywordTotal : 0;
+  if (missingRatio >= 0.65) {
+    score -= 45;
+    gaps.push(`The resume is missing ${keyword.missing.length} of ${keywordTotal} important terms from the job posting.`);
+  } else if (missingRatio >= 0.45) {
+    score -= 32;
+    gaps.push(`The resume misses several important job-posting terms: ${keyword.missing.slice(0, 6).join(", ")}.`);
+  } else if (missingRatio >= 0.25) {
+    score -= 18;
+    gaps.push(`Some relevant job-posting terms are missing: ${keyword.missing.slice(0, 5).join(", ")}.`);
+  }
+
+  const jdKeywords = topKeywords(jd, 20);
+  const strongOverlap = jdKeywords.filter(k => resumeTokens.has(k)).length;
+  if (jdKeywords.length >= 10 && strongOverlap < Math.ceil(jdKeywords.length * 0.25)) {
+    score -= 25;
+    gaps.push("The resume has very little overlap with the core language of the job posting.");
+  }
+
+  if (input.roleType && input.roleType !== "Other") {
+    const roleWords = tokenize(input.roleType).filter(w => !STOP_WORDS.has(w));
+    const roleEvidence = roleWords.some(w => resumeTokens.has(w));
+    const managerEvidence = /\b(manager|managed|lead|led|supervisor|director|vp|executive|oversaw|team)\b/i.test(resumeLower);
+    const targetImpliesLeadership = /manager|director|vice|president|executive|lead/i.test(input.roleType);
+    if (targetImpliesLeadership && !managerEvidence) {
+      score -= 15;
+      gaps.push("The selected role level implies leadership, but the resume does not show clear leadership evidence.");
+    } else if (!targetImpliesLeadership && roleWords.length && !roleEvidence && keyword.score < 65) {
+      score -= 8;
+      gaps.push("The resume does not clearly signal the selected role type.");
+    }
+  }
+
+  if (input.jobType === "administrative_coordinator" && !/\b(coordinat|schedul|calendar|administrat|office|workflow|stakeholder|document|records?)\b/i.test(resumeLower)) {
+    score -= 18;
+    gaps.push("The resume does not yet show enough administrative, coordination, workflow, or stakeholder-support evidence.");
+  }
+
+  if (input.industry && input.industry !== "Other") {
+    const industryWords = tokenize(input.industry).filter(w => !STOP_WORDS.has(w));
+    if (industryWords.length && !industryWords.some(w => resumeTokens.has(w)) && keyword.score < 60) {
+      score -= 10;
+      gaps.push(`The resume does not clearly show experience connected to ${input.industry}.`);
+    }
+  }
+
+  if (input.suitabilityContext && input.suitabilityContext.trim().length > 30) {
+    score += 5;
+  }
+
+  return { score: Math.max(20, Math.min(100, score)), gaps };
+}
+
+export function computeAtsScore(parts: { keyword: number; formatting: number; structure: number; ageBias: number; roleFit?: number }): number {
   const { keyword, formatting, structure, ageBias } = parts;
+  if (typeof parts.roleFit === "number") {
+    return Math.round(keyword * 0.35 + parts.roleFit * 0.25 + formatting * 0.15 + structure * 0.15 + ageBias * 0.1);
+  }
   return Math.round(keyword * 0.4 + formatting * 0.2 + structure * 0.2 + ageBias * 0.2);
+}
+
+function scoreDeductions(parts: { keyword: number; formatting: number; structure: number; ageBias: number; roleFit: number; keywordMissing: string[]; roleGaps: string[]; ageFlags: string[] }): ScoreDeduction[] {
+  const deductions: ScoreDeduction[] = [];
+  if (parts.keyword < 100) {
+    deductions.push({ category: "Keyword match", amount: 100 - parts.keyword, reason: parts.keywordMissing.length ? `Missing role-specific terms such as ${parts.keywordMissing.slice(0, 6).join(", ")}.` : "No target posting was provided, so keyword fit could not be fully verified." });
+  }
+  if (parts.roleFit < 100) {
+    deductions.push({ category: "Role fit", amount: 100 - parts.roleFit, reason: parts.roleGaps[0] || "The resume does not fully prove fit for the selected role." });
+  }
+  if (parts.structure < 100) {
+    deductions.push({ category: "Resume structure", amount: 100 - parts.structure, reason: "The resume is missing one or more standard sections hiring systems expect, such as experience, education, or skills." });
+  }
+  if (parts.formatting < 100) {
+    deductions.push({ category: "Formatting", amount: 100 - parts.formatting, reason: "The resume contains formatting that can make parsing less reliable." });
+  }
+  if (parts.ageBias < 100) {
+    deductions.push({ category: "Age-bias signals", amount: 100 - parts.ageBias, reason: parts.ageFlags[0] || "The resume contains signals that may date the candidate unnecessarily." });
+  }
+  return deductions.sort((a, b) => b.amount - a.amount);
+}
+
+function mismatchWarning(jobDescription: string | undefined, atsScore: number, gaps: string[], missing: string[]): MismatchWarning | undefined {
+  if (!jobDescription?.trim() || atsScore >= 60) return undefined;
+  const combined = [...gaps, ...missing.slice(0, 5).map(term => `Missing job-posting keyword: ${term}`)].filter(Boolean);
+  return {
+    message: "Based on your resume, this role may not be an ideal match. Here's why:",
+    gaps: combined.slice(0, 6).length ? combined.slice(0, 6) : ["The resume does not provide enough direct evidence for the requirements in the job posting."],
+  };
 }
 
 export async function runRewrite(input: RewriteInput): Promise<RewriteResult> {
@@ -277,7 +396,9 @@ export async function runRewrite(input: RewriteInput): Promise<RewriteResult> {
   const structure = scoreStructure(rewrittenText);
   const ageFlagsAfter = detectAgeBiasFlags(rewrittenText);
   const ageBias = Math.max(0, 100 - ageFlagsAfter.length * 25);
-  const ats = computeAtsScore({ keyword: km.score, formatting, structure, ageBias });
+  const fit = computeRoleFit(input, rewrittenText, km);
+  const ats = computeAtsScore({ keyword: km.score, formatting, structure, ageBias, roleFit: fit.score });
+  const deductions = scoreDeductions({ keyword: km.score, formatting, structure, ageBias, roleFit: fit.score, keywordMissing: km.missing, roleGaps: fit.gaps, ageFlags: ageFlagsAfter });
 
   return {
     rewrittenText,
@@ -296,6 +417,9 @@ export async function runRewrite(input: RewriteInput): Promise<RewriteResult> {
       formattingScore: formatting,
       structureScore: structure,
       ageBiasScore: ageBias,
+      roleFitScore: fit.score,
+      deductions,
+      mismatchWarning: mismatchWarning(input.jobDescription, ats, fit.gaps, km.missing),
     },
   };
 }
@@ -337,7 +461,7 @@ export async function runTeaser(input: RewriteInput): Promise<{
   ageBiasFlags: string[];
   scores: RewriteResult["scores"];
 }> {
-  const teaserPrompt = `You are JASS, a senior executive coach. Take the FIRST TWO bullet points or duty statements found in the user's resume and rewrite them as strong achievement-based bullets. Be direct, caring, and practical. Quantify only if numbers exist or are obvious. NEVER use em dashes. Return JSON: {"items":[{"original":"...","rewritten":"..."}]}.
+  const teaserPrompt = `You are JASS. Take the FIRST TWO bullet points or duty statements found in the user's resume and rewrite them as strong achievement-based bullets in the candidate's own voice. Be direct, caring, and practical. Quantify only if numbers exist or are obvious. NEVER use em dashes. Return JSON: {"items":[{"original":"...","rewritten":"..."}]}.
 
 ORIGINAL RESUME:
 ${input.originalText.slice(0, 4000)}`;
@@ -392,7 +516,9 @@ ${input.originalText.slice(0, 4000)}`;
   const structure = scoreStructure(input.originalText);
   const ageFlags = detectAgeBiasFlags(input.originalText);
   const ageBias = Math.max(0, 100 - ageFlags.length * 25);
-  const ats = computeAtsScore({ keyword: km.score, formatting, structure, ageBias });
+  const fit = computeRoleFit(input, input.originalText, km);
+  const ats = computeAtsScore({ keyword: km.score, formatting, structure, ageBias, roleFit: fit.score });
+  const deductions = scoreDeductions({ keyword: km.score, formatting, structure, ageBias, roleFit: fit.score, keywordMissing: km.missing, roleGaps: fit.gaps, ageFlags });
 
   return {
     teaserBullets: (parsed.items || []).slice(0, 2),
@@ -403,6 +529,9 @@ ${input.originalText.slice(0, 4000)}`;
       formattingScore: formatting,
       structureScore: structure,
       ageBiasScore: ageBias,
+      roleFitScore: fit.score,
+      deductions,
+      mismatchWarning: mismatchWarning(input.jobDescription, ats, fit.gaps, km.missing),
     },
   };
 }

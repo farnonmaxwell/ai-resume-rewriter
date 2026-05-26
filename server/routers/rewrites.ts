@@ -25,6 +25,9 @@ const intakeSchema = z.object({
   jobType: z.enum(jobTypeValues).optional(),
   industry: z.enum(industryValues).optional(),
   industryOther: z.string().max(160).optional().nullable(),
+  targetIndustry: z.enum(industryValues).optional(),
+  targetIndustryOther: z.string().max(160).optional().nullable(),
+  suitabilityContext: z.string().max(4000).optional().nullable(),
   jobDescription: z.string().max(20000).optional(),
   concerns: z.array(z.string()).optional(),
   yearsToHighlight: z.string().max(16).optional(),
@@ -93,6 +96,9 @@ export const rewritesRouter = router({
         jobType: input.jobType,
         industry: input.industry,
         industryOther: input.industryOther,
+        targetIndustry: input.targetIndustry,
+        targetIndustryOther: input.targetIndustryOther,
+        suitabilityContext: input.suitabilityContext,
         jobDescription: input.jobDescription,
         concerns: input.concerns ?? [],
         yearsToHighlight: input.yearsToHighlight,
@@ -109,9 +115,10 @@ export const rewritesRouter = router({
       const teaser = await runTeaser({
         originalText: r.originalText,
         roleType: r.roleType ?? undefined,
-        industry: r.industryOther || r.industry || undefined,
+        industry: r.targetIndustryOther || r.targetIndustry || r.industryOther || r.industry || undefined,
         jobType: r.jobType ?? undefined,
         jobDescription: r.jobDescription ?? undefined,
+        suitabilityContext: r.suitabilityContext ?? undefined,
         concerns: (r.concerns as string[]) ?? [],
         yearsToHighlight: r.yearsToHighlight ?? undefined,
       });
@@ -134,17 +141,22 @@ export const rewritesRouter = router({
     }),
 
   generateFull: protectedProcedure
-    .input(z.object({ id: uuidSchema }))
+    .input(z.object({ id: uuidSchema, suitabilityContext: z.string().max(4000).optional().nullable() }))
     .mutation(async ({ ctx, input }) => {
       const r = await db.getRewriteById(input.id);
       if (!r || r.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+      const suitabilityContext = input.suitabilityContext?.trim() || r.suitabilityContext || undefined;
+      if (input.suitabilityContext !== undefined) {
+        await db.updateRewrite(input.id, { suitabilityContext: input.suitabilityContext?.trim() || null });
+      }
 
       const result = await runRewrite({
         originalText: r.originalText,
         roleType: r.roleType ?? undefined,
-        industry: r.industryOther || r.industry || undefined,
+        industry: r.targetIndustryOther || r.targetIndustry || r.industryOther || r.industry || undefined,
         jobType: r.jobType ?? undefined,
         jobDescription: r.jobDescription ?? undefined,
+        suitabilityContext,
         concerns: (r.concerns as string[]) ?? [],
         yearsToHighlight: r.yearsToHighlight ?? undefined,
       });
@@ -185,6 +197,9 @@ export const rewritesRouter = router({
         formattingScore: result.scores.formattingScore,
         structureScore: result.scores.structureScore,
         ageBiasScore: result.scores.ageBiasScore,
+        roleFitScore: result.scores.roleFitScore,
+        scoreDeductions: result.scores.deductions,
+        mismatchWarning: result.scores.mismatchWarning ?? null,
         pdfFileKey: pdfKey,
         docxFileKey: docxKey,
       });

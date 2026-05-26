@@ -73,8 +73,8 @@ export default function IntakePage() {
       await save.mutateAsync({
         id,
         roleType: roleType || undefined,
-        industry: industry || undefined,
-        industryOther: industry === "Other" ? industryOther.trim() : null,
+        targetIndustry: industry || undefined,
+        targetIndustryOther: industry === "Other" ? industryOther.trim() : null,
         jobDescription: jobDescription || undefined,
         concerns,
         yearsToHighlight: yearsToHighlight || undefined,
@@ -151,7 +151,7 @@ export default function IntakePage() {
               {step === 3 && (
                 <div>
                   <Label htmlFor="jd" className="text-base text-jass-navy">Paste a target job description (optional)</Label>
-                  <p className="text-sm text-jass-muted mb-3">We extract ATS keywords directly from this. Leaving it blank still works.</p>
+                  <p className="text-sm text-jass-muted mb-3">JASS uses this to judge role fit and tailor the rewrite. Leaving it blank still works.</p>
                   <Textarea id="jd" rows={10} value={jobDescription} onChange={e => setJobDescription(e.target.value)} placeholder="Paste the full job posting here..." />
                 </div>
               )}

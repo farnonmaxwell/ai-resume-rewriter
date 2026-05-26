@@ -19,6 +19,8 @@ export type Profile = {
   targetRole: string | null;
   industry: string | null;
   industryOther: string | null;
+  targetIndustry: string | null;
+  targetIndustryOther: string | null;
   resumeFormat: string | null;
   scoringMethod: string | null;
   jobSources: string[];
@@ -40,6 +42,9 @@ export type Rewrite = {
   jobType?: string | null;
   industry?: string | null;
   industryOther?: string | null;
+  targetIndustry?: string | null;
+  targetIndustryOther?: string | null;
+  suitabilityContext?: string | null;
   jobDescription?: string | null;
   concerns?: string[];
   yearsToHighlight?: string | null;
@@ -53,6 +58,9 @@ export type Rewrite = {
   formattingScore?: number | null;
   structureScore?: number | null;
   ageBiasScore?: number | null;
+  roleFitScore?: number | null;
+  scoreDeductions?: unknown;
+  mismatchWarning?: unknown;
   status?: "draft" | "scored" | "rewritten";
   pdfFileKey?: string | null;
   docxFileKey?: string | null;
@@ -92,6 +100,8 @@ function profileFromRow(row: any): Profile {
     targetRole: row.target_role ?? null,
     industry: row.industry ?? null,
     industryOther: row.industry_other ?? null,
+    targetIndustry: row.target_industry ?? null,
+    targetIndustryOther: row.target_industry_other ?? null,
     resumeFormat: row.resume_format ?? null,
     scoringMethod: row.scoring_method ?? null,
     jobSources: row.job_sources ?? [],
@@ -115,6 +125,9 @@ function rewriteFromRow(row: any): Rewrite {
     jobType: row.job_type ?? null,
     industry: row.industry ?? null,
     industryOther: row.industry_other ?? null,
+    targetIndustry: row.target_industry ?? null,
+    targetIndustryOther: row.target_industry_other ?? null,
+    suitabilityContext: row.suitability_context ?? null,
     jobDescription: row.job_description ?? null,
     concerns: row.concerns ?? [],
     yearsToHighlight: row.years_to_highlight ?? null,
@@ -128,6 +141,9 @@ function rewriteFromRow(row: any): Rewrite {
     formattingScore: row.formatting_score ?? null,
     structureScore: row.structure_score ?? null,
     ageBiasScore: row.age_bias_score ?? null,
+    roleFitScore: row.role_fit_score ?? null,
+    scoreDeductions: row.score_deductions ?? null,
+    mismatchWarning: row.mismatch_warning ?? null,
     status: row.status ?? "draft",
     pdfFileKey: row.pdf_file_key ?? null,
     docxFileKey: row.docx_file_key ?? null,
@@ -217,6 +233,8 @@ export async function upsertProfile(userId: string, input: Partial<{
   targetRole: string | null;
   industry: string | null;
   industryOther: string | null;
+  targetIndustry: string | null;
+  targetIndustryOther: string | null;
   feedbackOptIn: boolean;
 }>): Promise<Profile> {
   const cfg = getJobTypeConfig(input.jobType);
@@ -233,6 +251,8 @@ export async function upsertProfile(userId: string, input: Partial<{
   if ("targetRole" in input) payload.target_role = input.targetRole;
   if ("industry" in input) payload.industry = input.industry;
   if ("industryOther" in input) payload.industry_other = input.industryOther;
+  if ("targetIndustry" in input) payload.target_industry = input.targetIndustry;
+  if ("targetIndustryOther" in input) payload.target_industry_other = input.targetIndustryOther;
   if ("feedbackOptIn" in input) payload.feedback_opt_in = input.feedbackOptIn;
 
   const { data, error } = await supabaseAdmin
@@ -253,6 +273,9 @@ export async function createRewrite(input: {
   jobType?: string | null;
   industry?: string | null;
   industryOther?: string | null;
+  targetIndustry?: string | null;
+  targetIndustryOther?: string | null;
+  suitabilityContext?: string | null;
   jobDescription?: string | null;
   concerns?: string[];
   yearsToHighlight?: string | null;
@@ -269,6 +292,9 @@ export async function createRewrite(input: {
       job_type: input.jobType ?? profile?.jobType ?? null,
       industry: input.industry ?? profile?.industry ?? null,
       industry_other: input.industryOther ?? profile?.industryOther ?? null,
+      target_industry: input.targetIndustry ?? profile?.targetIndustry ?? null,
+      target_industry_other: input.targetIndustryOther ?? profile?.targetIndustryOther ?? null,
+      suitability_context: input.suitabilityContext ?? null,
       job_description: input.jobDescription ?? null,
       concerns: input.concerns ?? [],
       years_to_highlight: input.yearsToHighlight ?? null,
@@ -295,6 +321,9 @@ export async function updateRewrite(id: string, patch: Partial<Rewrite>): Promis
   if ("jobType" in patch) update.job_type = patch.jobType;
   if ("industry" in patch) update.industry = patch.industry;
   if ("industryOther" in patch) update.industry_other = patch.industryOther;
+  if ("targetIndustry" in patch) update.target_industry = patch.targetIndustry;
+  if ("targetIndustryOther" in patch) update.target_industry_other = patch.targetIndustryOther;
+  if ("suitabilityContext" in patch) update.suitability_context = patch.suitabilityContext;
   if ("jobDescription" in patch) update.job_description = patch.jobDescription;
   if ("concerns" in patch) update.concerns = patch.concerns;
   if ("yearsToHighlight" in patch) update.years_to_highlight = patch.yearsToHighlight;
@@ -308,6 +337,9 @@ export async function updateRewrite(id: string, patch: Partial<Rewrite>): Promis
   if ("formattingScore" in patch) update.formatting_score = patch.formattingScore;
   if ("structureScore" in patch) update.structure_score = patch.structureScore;
   if ("ageBiasScore" in patch) update.age_bias_score = patch.ageBiasScore;
+  if ("roleFitScore" in patch) update.role_fit_score = patch.roleFitScore;
+  if ("scoreDeductions" in patch) update.score_deductions = patch.scoreDeductions;
+  if ("mismatchWarning" in patch) update.mismatch_warning = patch.mismatchWarning;
   if ("status" in patch) update.status = patch.status;
   if ("pdfFileKey" in patch) update.pdf_file_key = patch.pdfFileKey;
   if ("docxFileKey" in patch) update.docx_file_key = patch.docxFileKey;

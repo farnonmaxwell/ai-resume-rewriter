@@ -10,7 +10,7 @@ import { useLocation, useRoute } from "wouter";
 function badge(type: string) {
   switch (type) {
     case "age_bias_removed": return { label: "Age bias removed", className: "bg-[#b3261e]/10 text-[#b3261e] border-[#b3261e]/30" };
-    case "ats_keyword_added": return { label: "ATS keyword added", className: "bg-jass-gold/10 text-[#8a6a1f] border-jass-gold/40" };
+    case "ats_keyword_added": return { label: "Keyword added", className: "bg-jass-gold/10 text-[#8a6a1f] border-jass-gold/40" };
     case "achievement_rewrite": return { label: "Achievement rewrite", className: "bg-jass-navy/5 text-jass-navy border-jass-navy/30" };
     case "formatting": return { label: "Formatting", className: "bg-jass-light-gray text-jass-muted border-jass-mid-gray" };
     case "structure": return { label: "Structure", className: "bg-jass-light-gray text-jass-muted border-jass-mid-gray" };
@@ -73,6 +73,7 @@ export default function ResultsPage() {
   const annotations = (resume.changeAnnotations as any[]) ?? [];
   const tips = (resume.tips as string[]) ?? [];
   const ageFlags = (resume.ageBiasFlags as string[]) ?? [];
+  const deductions = (resume.scoreDeductions as any[]) ?? [];
 
   return (
     <PageShell>
@@ -97,12 +98,13 @@ export default function ResultsPage() {
           </div>
           <div className="bg-white/5 rounded-lg border border-white/10 p-5">
             <ScoreCircle value={resume.atsScore ?? 0} />
-            <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-white/80">
-              <div>Keywords <span className="text-jass-gold font-semibold">{resume.keywordScore ?? 0}</span></div>
-              <div>Formatting <span className="text-jass-gold font-semibold">{resume.formattingScore ?? 0}</span></div>
-              <div>Structure <span className="text-jass-gold font-semibold">{resume.structureScore ?? 0}</span></div>
-              <div>Age bias <span className="text-jass-gold font-semibold">{resume.ageBiasScore ?? 0}</span></div>
-            </div>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-white/80">
+                <div>Keywords <span className="text-jass-gold font-semibold">{resume.keywordScore ?? 0}</span></div>
+                <div>Role fit <span className="text-jass-gold font-semibold">{resume.roleFitScore ?? resume.keywordScore ?? 0}</span></div>
+                <div>Formatting <span className="text-jass-gold font-semibold">{resume.formattingScore ?? 0}</span></div>
+                <div>Structure <span className="text-jass-gold font-semibold">{resume.structureScore ?? 0}</span></div>
+                <div>Age bias <span className="text-jass-gold font-semibold">{resume.ageBiasScore ?? 0}</span></div>
+              </div>
           </div>
         </div>
       </section>
@@ -156,6 +158,18 @@ export default function ResultsPage() {
           </Card>
 
           <div className="space-y-6">
+            {deductions.length > 0 && (
+              <Card className="border-jass-mid-gray">
+                <CardContent className="p-6">
+                  <h3 className="font-display text-xl font-bold text-jass-navy">Why the final score is not 100</h3>
+                  <ul className="mt-3 space-y-2 text-sm text-jass-muted">
+                    {deductions.slice(0, 5).map((deduction, index) => (
+                      <li key={index} className="flex items-start gap-2"><TriangleAlert className="w-4 h-4 text-[#b88c2f] mt-0.5" /> <span><span className="font-semibold text-jass-navy">{deduction.category}:</span> {deduction.reason}</span></li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
             <Card className="border-jass-mid-gray">
               <CardContent className="p-6">
                 <h3 className="font-display text-xl font-bold text-jass-navy">Personalized tips</h3>

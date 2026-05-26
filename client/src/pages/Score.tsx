@@ -1,8 +1,9 @@
 import PageShell from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { ArrowRight, CheckCircle2, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, Sparkles, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useLocation, useRoute } from "wouter";
@@ -26,7 +27,8 @@ export default function ScorePage() {
   const [, params] = useRoute<{ id: string }>("/score/:id");
   const id = params?.id || "";
   const [, setLocation] = useLocation();
-  const [data, setData] = useState<Awaited<ReturnType<ReturnType<typeof trpc.rewrites.generateTeaser.useMutation>["mutateAsync"]>> | null>(null);
+  const [data, setData] = useState<any>(null);
+  const [suitabilityContext, setSuitabilityContext] = useState("");
 
   const teaser = trpc.rewrites.generateTeaser.useMutation();
   const generateFull = trpc.rewrites.generateFull.useMutation();
@@ -65,12 +67,15 @@ export default function ScorePage() {
 
   const runFull = async () => {
     try {
-      await generateFull.mutateAsync({ id });
+      await generateFull.mutateAsync({ id, suitabilityContext: suitabilityContext.trim() || undefined });
       setLocation(`/results/${id}`);
     } catch (error: any) {
       toast.error(error?.message ?? "Could not generate the full rewrite");
     }
   };
+
+  const warning = data.scores.mismatchWarning;
+  const deductions = data.scores.deductions ?? [];
 
   return (
     <PageShell>
@@ -92,15 +97,26 @@ export default function ScorePage() {
               </div>
               <div className="mt-6 space-y-4">
                 <ScoreBar label="Keyword match" value={data.scores.keywordScore} />
+                <ScoreBar label="Role fit" value={data.scores.roleFitScore ?? data.scores.keywordScore} />
                 <ScoreBar label="Formatting" value={data.scores.formattingScore} />
                 <ScoreBar label="Structure" value={data.scores.structureScore} />
                 <ScoreBar label="Age-bias signals" value={data.scores.ageBiasScore} />
               </div>
+              {deductions.length > 0 && (
+                <div className="mt-6 p-4 rounded bg-jass-light-gray">
+                  <div className="text-sm font-semibold text-jass-navy">Why the score is not 100</div>
+                  <ul className="mt-2 list-disc pl-5 text-sm text-jass-muted space-y-1">
+                    {deductions.slice(0, 5).map((deduction: any, index: number) => (
+                      <li key={index}><span className="font-semibold text-jass-navy">{deduction.category}:</span> {deduction.reason}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {data.ageBiasFlags.length > 0 && (
                 <div className="mt-6 p-4 rounded bg-jass-light-gray">
                   <div className="text-sm font-semibold text-jass-navy">What JASS flagged</div>
                   <ul className="mt-2 list-disc pl-5 text-sm text-jass-muted space-y-1">
-                    {data.ageBiasFlags.map((flag, index) => <li key={index}>{flag}</li>)}
+                    {data.ageBiasFlags.map((flag: string, index: number) => <li key={index}>{flag}</li>)}
                   </ul>
                 </div>
               )}
@@ -113,12 +129,12 @@ export default function ScorePage() {
                 <Sparkles className="w-5 h-5" />
                 <span className="text-sm font-semibold uppercase tracking-wider">Sample of the rewrite</span>
               </div>
-              <p className="text-sm text-jass-muted mt-1">A preview of how JASS turns duties into evidence.</p>
+              <p className="text-sm text-jass-muted mt-1">A preview of how JASS turns duties into evidence in your own voice.</p>
               <div className="mt-4 space-y-4">
                 {data.teaserBullets.length === 0 ? (
                   <div className="text-sm text-jass-muted">We could not find clear bullets to preview. Generate the full rewrite to see all the changes.</div>
                 ) : (
-                  data.teaserBullets.map((bullet, index) => (
+                  data.teaserBullets.map((bullet: { original: string; rewritten: string }, index: number) => (
                     <div key={index} className="grid sm:grid-cols-2 gap-3">
                       <div className="rounded border border-[#b3261e]/30 bg-[#b3261e]/5 p-3">
                         <div className="text-xs uppercase tracking-wider text-[#b3261e] font-semibold">Before</div>
@@ -132,6 +148,30 @@ export default function ScorePage() {
                   ))
                 )}
               </div>
+              {warning && (
+                <div className="mt-6 rounded border border-[#b3261e]/30 bg-[#b3261e]/5 p-4">
+                  <div className="flex items-start gap-2 text-[#b3261e]">
+                    <TriangleAlert className="w-5 h-5 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-semibold">{warning.message}</div>
+                      <ul className="mt-2 list-disc pl-5 text-sm text-jass-navy space-y-1">
+                        {warning.gaps.map((gap: string, index: number) => <li key={index}>{gap}</li>)}
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <label htmlFor="suitabilityContext" className="text-sm font-semibold text-jass-navy">Tell us why you believe you're suited for this role</label>
+                    <Textarea
+                      id="suitabilityContext"
+                      value={suitabilityContext}
+                      onChange={(event) => setSuitabilityContext(event.target.value)}
+                      rows={4}
+                      placeholder="For example: unlisted experience, career change context, internal referral, adjacent skills, or background that does not appear clearly in the resume."
+                    />
+                    <p className="text-xs text-jass-muted">JASS will use this context when generating the rewrite, but it will not invent experience or hide real gaps.</p>
+                  </div>
+                </div>
+              )}
               <div className="mt-6 border-t pt-6">
                 <div className="font-semibold text-jass-navy">Generate the full rewrite</div>
                 <ul className="mt-3 text-sm text-jass-muted space-y-1">
