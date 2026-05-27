@@ -57,7 +57,7 @@ export const JOB_TYPES = [
     jobSources: ["Indeed", "LinkedIn", "company career pages", "local employer sites", "staffing agencies"],
     interviewPrepStyle: "Clear, organized, practical, and focused on judgment, follow-through, and trust",
     displayedMonthlyPrice: 49.99,
-    pricingAudience: "Administrative, coordinator, receptionist, office manager, and executive assistant applicants",
+    pricingAudience: "Administrative, coordinator, receptionist, and office manager applicants",
   },
   {
     value: "other",

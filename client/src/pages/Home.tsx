@@ -25,7 +25,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 grid md:grid-cols-12 gap-10 items-center">
           <div className="md:col-span-7">
             <p className="inline-block text-xs uppercase tracking-[0.2em] text-jass-gold font-semibold border border-jass-gold/40 rounded-full px-3 py-1 mb-6">
-              JASS · Job Application Support System
+              JASS · Resume support that gets you seen
             </p>
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold leading-tight">
               Beat the ATS. Move from resume review to interview.
@@ -64,7 +64,7 @@ export default function Home() {
                   </div>
                   <div className="rounded-lg border border-jass-gold/40 p-4">
                     <div className="text-xs uppercase tracking-wide text-jass-gold font-semibold">After JASS rewrite</div>
-                    <p className="mt-1 text-jass-navy">Led cross-functional operations reporting that improved executive visibility, reduced handoff delays, and gave hiring managers clearer evidence of impact.</p>
+                    <p className="mt-1 text-jass-navy">Led cross-functional operations reporting that improved visibility, reduced handoff delays, and gave hiring managers clearer evidence of impact.</p>
                   </div>
                 </div>
               </CardContent>

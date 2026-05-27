@@ -7,7 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { BLS_INDUSTRIES, JOB_TYPES, getJobTypeConfig } from "@shared/jass";
 import { CheckCircle2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -45,10 +45,10 @@ export default function OnboardingPage() {
 
   const selectedConfig = useMemo(() => getJobTypeConfig(jobType), [jobType]);
 
-  const submit = (event: React.FormEvent) => {
+  const submit = (event: FormEvent) => {
     event.preventDefault();
     if (industry === "Other" && !industryOther.trim()) {
-      toast.error("Tell us the industry you are coming from, even if it is a custom one.");
+      toast.error("Tell us your current or recent industry, even if it is a custom one.");
       return;
     }
     if (targetIndustry === "Other" && !targetIndustryOther.trim()) {
@@ -111,9 +111,9 @@ export default function OnboardingPage() {
                   <Input id="targetRole" value={targetRole} onChange={(event) => setTargetRole(event.target.value)} placeholder="Administrative Coordinator, RN, HVAC Technician" />
                 </div>
                 <div className="space-y-2">
-                  <Label>What industry are you coming from?</Label>
+                  <Label>Which industry best describes your current or most recent experience?</Label>
                   <Select value={industry} onValueChange={setIndustry}>
-                    <SelectTrigger><SelectValue placeholder="Choose current or recent industry" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Choose your current or recent industry" /></SelectTrigger>
                     <SelectContent>
                       {BLS_INDUSTRIES.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
                     </SelectContent>
@@ -123,17 +123,17 @@ export default function OnboardingPage() {
 
               {industry === "Other" && (
                 <div className="space-y-2">
-                  <Label htmlFor="industryOther">Describe the industry you are coming from</Label>
+                  <Label htmlFor="industryOther">Describe your current or recent industry</Label>
                   <Input id="industryOther" value={industryOther} onChange={(event) => setIndustryOther(event.target.value)} placeholder="Tell JASS the exact industry" />
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label>What industry are you targeting? <span className="text-jass-muted font-normal">Optional</span></Label>
+                <Label>Which industry are you targeting next? <span className="text-jass-muted font-normal">Optional</span></Label>
                 <Select value={targetIndustry || "same"} onValueChange={(value) => setTargetIndustry(value === "same" ? "" : value)}>
-                  <SelectTrigger><SelectValue placeholder="Same as above or choose a new industry" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Keep the same industry or choose a new target" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="same">Same as the industry I am coming from</SelectItem>
+                    <SelectItem value="same">Same as my current or recent industry</SelectItem>
                     {BLS_INDUSTRIES.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
                   </SelectContent>
                 </Select>

@@ -6,7 +6,9 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AdminPage from "./pages/Admin";
 import AuthPage from "./pages/Auth";
+import ContactPage from "./pages/Contact";
 import DashboardPage from "./pages/Dashboard";
+import FAQPage from "./pages/FAQ";
 import Home from "./pages/Home";
 import HowItWorksPage from "./pages/HowItWorks";
 import IntakePage from "./pages/Intake";
@@ -30,6 +32,8 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/pricing" component={PricingPage} />
       <Route path="/how-it-works" component={HowItWorksPage} />
+      <Route path="/faq" component={FAQPage} />
+      <Route path="/contact" component={ContactPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

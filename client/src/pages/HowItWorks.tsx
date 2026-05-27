@@ -14,17 +14,17 @@ const tiers = [
   {
     title: "Free",
     price: "$0",
-    body: "One resume rewrite against one job posting. Sign-up required. You get one shot, with up to 3 attempts at the same rewrite.",
+    body: "One resume rewrite against one job posting. Sign-up required.",
   },
   {
     title: "One-off",
     price: "$59.99",
-    body: "A full JASS deliverable capped at 5 job matches and one rewrite cycle. Pay once, get the deliverable, and you are done.",
+    body: "Full service including a resume rewrite plus up to 5 matched jobs. Delivered and done.",
   },
   {
     title: "Monthly",
     price: "$49.99/month",
-    body: "Full ongoing access with unlimited rewrites, tracker access, follow-ups, interview prep, and cancellation anytime.",
+    body: "Full service unlimited: resume optimization, job matching, application tracker, follow-ups, and interview prep. Cancel anytime.",
   },
 ];
 

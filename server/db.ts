@@ -389,6 +389,17 @@ export async function listEmailSubscribers(): Promise<Array<{ id: string; email:
   return (data ?? []).map((row: any) => ({ id: row.id, email: row.email, source: row.source, createdAt: toDate(row.created_at) }));
 }
 
+export async function createContactSubmission(input: { name: string; email: string; subject?: string | null; message: string; source?: string | null }): Promise<void> {
+  const { error } = await supabaseAdmin.from("contact_submissions").insert({
+    name: input.name.trim(),
+    email: input.email.toLowerCase().trim(),
+    subject: input.subject?.trim() || null,
+    message: input.message.trim(),
+    source: input.source?.trim() || "contact",
+  });
+  assertNoError(error, "Unable to submit contact form");
+}
+
 export async function createFeedbackOutcome(input: FeedbackOutcomeInput): Promise<void> {
   const { error } = await supabaseAdmin.from("feedback_outcomes").insert({
     user_id: input.userId,

@@ -4,6 +4,20 @@ import { syncSubscriber } from "../mailchimp";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 
 export const marketingRouter = router({
+  /** Public contact form capture from the contact page. */
+  submitContact: publicProcedure
+    .input(z.object({
+      name: z.string().trim().min(1).max(120),
+      email: z.string().email().max(254),
+      subject: z.string().trim().max(160).optional(),
+      message: z.string().trim().min(10).max(4000),
+      source: z.string().trim().max(64).default("contact"),
+    }))
+    .mutation(async ({ input }) => {
+      await db.createContactSubmission(input);
+      return { ok: true };
+    }),
+
   /** Public newsletter capture from the landing page. */
   subscribe: publicProcedure
     .input(z.object({ email: z.string().email(), source: z.string().max(64).default("landing") }))

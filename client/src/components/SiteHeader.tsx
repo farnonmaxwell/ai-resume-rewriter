@@ -23,6 +23,8 @@ export default function SiteHeader() {
     { href: "/", label: "Home" },
     { href: "/pricing", label: "Pricing" },
     { href: "/how-it-works", label: "How It Works" },
+    { href: "/faq", label: "FAQ" },
+    { href: "/contact", label: "Contact" },
   ];
 
   return (
@@ -30,7 +32,7 @@ export default function SiteHeader() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
         <Link href="/" className="flex items-center gap-2">
           <span className="font-display text-2xl font-bold text-jass-gold">JASS</span>
-          <span className="hidden sm:inline text-sm tracking-wide text-white/80">Job Application Support System</span>
+          <span className="hidden sm:inline text-sm tracking-wide text-white/80">Resume support that gets through hiring systems</span>
         </Link>
         <nav aria-label="Primary" className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (

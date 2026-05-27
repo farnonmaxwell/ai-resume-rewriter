@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { getJobTypeConfig } from "@shared/jass";
-import { Download, FileText, Loader2, Sparkles } from "lucide-react";
+import { BriefcaseBusiness, Download, FileText, Loader2, MapPin, Sparkles } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 function titleCaseName(value?: string | null): string {
@@ -15,6 +15,30 @@ function titleCaseName(value?: string | null): string {
     .map(part => part.length <= 2 && part === part.toUpperCase() ? part : part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 }
+
+const mockMatchedJobs = [
+  {
+    title: "Administrative Coordinator",
+    company: "Regional Health Network",
+    location: "Hybrid · Philadelphia, PA",
+    fit: 92,
+    reason: "Strong match for scheduling, stakeholder communication, records, and office workflow language.",
+  },
+  {
+    title: "Operations Support Specialist",
+    company: "Mid-Atlantic Logistics Group",
+    location: "On-site · Allentown, PA",
+    fit: 86,
+    reason: "Good fit for coordination, process improvement, vendor follow-up, and high-volume task handling.",
+  },
+  {
+    title: "Client Services Coordinator",
+    company: "Financial Services Firm",
+    location: "Remote · Eastern Time",
+    fit: 81,
+    reason: "Useful overlap with customer communication, documentation, follow-through, and priority management.",
+  },
+];
 
 export default function DashboardPage() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -78,6 +102,36 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </section>
+
+      <section className="pb-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-jass-gold font-semibold">Job matching preview</p>
+              <h2 className="font-display text-2xl font-bold text-jass-navy">Matched jobs</h2>
+              <p className="text-sm text-jass-muted mt-1 max-w-2xl">This is the placeholder interface for the job-matching feed. Live matches will connect when the job-search API key is available.</p>
+            </div>
+            <Button variant="outline" disabled className="border-jass-navy text-jass-navy disabled:opacity-70">Live search coming soon</Button>
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {mockMatchedJobs.map((job) => (
+              <Card key={`${job.company}-${job.title}`} className="border-jass-mid-gray">
+                <CardContent className="p-5 h-full flex flex-col">
+                  <div className="flex items-start justify-between gap-3">
+                    <BriefcaseBusiness className="w-5 h-5 text-jass-gold shrink-0 mt-1" />
+                    <div className="rounded-full bg-jass-gold/10 px-2.5 py-1 text-xs font-bold text-jass-navy">{job.fit}% fit</div>
+                  </div>
+                  <h3 className="mt-4 font-display text-xl font-bold text-jass-navy">{job.title}</h3>
+                  <p className="text-sm font-semibold text-jass-navy mt-1">{job.company}</p>
+                  <p className="mt-2 flex items-start gap-1.5 text-xs text-jass-muted"><MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {job.location}</p>
+                  <p className="mt-4 text-sm text-jass-muted flex-1">{job.reason}</p>
+                  <Button variant="outline" disabled className="mt-5 w-full border-jass-navy text-jass-navy disabled:opacity-70">View match details</Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 

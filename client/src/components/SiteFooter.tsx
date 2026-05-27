@@ -7,7 +7,7 @@ export default function SiteFooter() {
         <div>
           <div className="font-display text-2xl text-jass-gold font-bold">JASS</div>
           <p className="mt-3 text-sm leading-relaxed text-white/70">
-            Job Application Support System. Direct, practical resume support for people trying to get through modern hiring systems without losing their voice.
+            Direct, practical resume support for people trying to get through modern hiring systems without losing their voice.
           </p>
         </div>
         <div>
@@ -16,6 +16,8 @@ export default function SiteFooter() {
             <li><Link href="/" className="hover:text-jass-gold">Home</Link></li>
             <li><Link href="/how-it-works" className="hover:text-jass-gold">How it works</Link></li>
             <li><Link href="/pricing" className="hover:text-jass-gold">Pricing</Link></li>
+            <li><Link href="/faq" className="hover:text-jass-gold">FAQ</Link></li>
+            <li><Link href="/contact" className="hover:text-jass-gold">Contact</Link></li>
             <li><Link href="/upload" className="hover:text-jass-gold">Start a rewrite</Link></li>
           </ul>
         </div>
